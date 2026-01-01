@@ -18,32 +18,18 @@ import {
 import { User, MonthlyData, CategoryData } from '@/types/database';
 import { IncomeExpenseChart, CategoryDonutChart } from '@/components/Charts';
 
-// Mock Data
+// Default User
 const mockUser: User = {
   id: '1',
-  name: 'สมชาย ใจดี',
-  email: 'owner@demo.com',
+  name: 'ผู้ใช้งาน',
+  email: 'user@demo.com',
   role: 'owner',
 };
 
-const mockMonthlyData: MonthlyData[] = [
-  { month: 'ม.ค.', income: 320000, expense: 180000 },
-  { month: 'ก.พ.', income: 380000, expense: 220000 },
-  { month: 'มี.ค.', income: 420000, expense: 280000 },
-  { month: 'เม.ย.', income: 350000, expense: 240000 },
-  { month: 'พ.ค.', income: 480000, expense: 310000 },
-  { month: 'มิ.ย.', income: 520000, expense: 350000 },
-  { month: 'ก.ค.', income: 485000, expense: 312500 },
-];
+// Empty initial data
+const mockMonthlyData: MonthlyData[] = [];
 
-const mockCategoryData: CategoryData[] = [
-  { name: 'เงินเดือน', value: 150000, color: '#ef4444' },
-  { name: 'ค่าเช่า', value: 45000, color: '#f97316' },
-  { name: 'ค่าน้ำค่าไฟ', value: 12500, color: '#eab308' },
-  { name: 'อุปกรณ์สำนักงาน', value: 35000, color: '#22c55e' },
-  { name: 'การตลาด', value: 55000, color: '#3b82f6' },
-  { name: 'อื่นๆ', value: 15000, color: '#8b5cf6' },
-];
+const mockCategoryData: CategoryData[] = [];
 
 // Format currency
 function formatCurrency(amount: number): string {

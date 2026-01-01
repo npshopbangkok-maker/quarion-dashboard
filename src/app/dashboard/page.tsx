@@ -16,114 +16,28 @@ import {
   CategoryData 
 } from '@/types/database';
 
-// Mock Data for Demo
+// Default User
 const mockUser: User = {
   id: '1',
-  name: 'สมชาย ใจดี',
-  email: 'owner@demo.com',
+  name: 'ผู้ใช้งาน',
+  email: 'user@demo.com',
   role: 'owner',
 };
 
+// Empty initial data
 const mockSummary: DashboardSummary = {
-  currentMonthIncome: 485000,
-  currentMonthExpense: 312500,
-  netProfit: 172500,
-  totalTransactions: 156,
+  currentMonthIncome: 0,
+  currentMonthExpense: 0,
+  netProfit: 0,
+  totalTransactions: 0,
 };
 
-const mockMonthlyData: MonthlyData[] = [
-  { month: 'ม.ค.', income: 320000, expense: 180000 },
-  { month: 'ก.พ.', income: 380000, expense: 220000 },
-  { month: 'มี.ค.', income: 420000, expense: 280000 },
-  { month: 'เม.ย.', income: 350000, expense: 240000 },
-  { month: 'พ.ค.', income: 480000, expense: 310000 },
-  { month: 'มิ.ย.', income: 520000, expense: 350000 },
-  { month: 'ก.ค.', income: 485000, expense: 312500 },
-];
+const mockMonthlyData: MonthlyData[] = [];
 
-const mockCategoryData: CategoryData[] = [
-  { name: 'เงินเดือน', value: 150000, color: '#ef4444' },
-  { name: 'ค่าเช่า', value: 45000, color: '#f97316' },
-  { name: 'ค่าน้ำค่าไฟ', value: 12500, color: '#eab308' },
-  { name: 'อุปกรณ์สำนักงาน', value: 35000, color: '#22c55e' },
-  { name: 'การตลาด', value: 55000, color: '#3b82f6' },
-  { name: 'อื่นๆ', value: 15000, color: '#8b5cf6' },
-];
+const mockCategoryData: CategoryData[] = [];
 
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'income',
-    amount: 150000,
-    category: 'ขายสินค้า',
-    description: 'รายได้จากการขายสินค้า',
-    date: '2026-01-15',
-    created_by: '1',
-    slip_url: null,
-    created_at: '2026-01-15T10:00:00Z',
-    user: { id: '1', name: 'สมชาย ใจดี', email: 'owner@demo.com', role: 'owner' },
-  },
-  {
-    id: '2',
-    type: 'expense',
-    amount: 45000,
-    category: 'ค่าเช่า',
-    description: 'ค่าเช่าสำนักงาน',
-    date: '2026-01-14',
-    created_by: '2',
-    slip_url: 'https://example.com/slip1.jpg',
-    created_at: '2026-01-14T09:00:00Z',
-    user: { id: '2', name: 'สมหญิง รักงาน', email: 'admin@demo.com', role: 'admin' },
-  },
-  {
-    id: '3',
-    type: 'income',
-    amount: 85000,
-    category: 'บริการ',
-    description: 'รายได้จากบริการให้คำปรึกษา',
-    date: '2026-01-13',
-    created_by: '1',
-    slip_url: null,
-    created_at: '2026-01-13T14:00:00Z',
-    user: { id: '1', name: 'สมชาย ใจดี', email: 'owner@demo.com', role: 'owner' },
-  },
-  {
-    id: '4',
-    type: 'expense',
-    amount: 12500,
-    category: 'ค่าน้ำค่าไฟ',
-    description: 'ค่าสาธารณูปโภคประจำเดือน',
-    date: '2026-01-12',
-    created_by: '2',
-    slip_url: 'https://example.com/slip2.jpg',
-    created_at: '2026-01-12T11:00:00Z',
-    user: { id: '2', name: 'สมหญิง รักงาน', email: 'admin@demo.com', role: 'admin' },
-  },
-  {
-    id: '5',
-    type: 'expense',
-    amount: 35000,
-    category: 'อุปกรณ์สำนักงาน',
-    description: 'ซื้อคอมพิวเตอร์ใหม่',
-    date: '2026-01-10',
-    created_by: '1',
-    slip_url: null,
-    created_at: '2026-01-10T15:00:00Z',
-    user: { id: '1', name: 'สมชาย ใจดี', email: 'owner@demo.com', role: 'owner' },
-  },
-  {
-    id: '6',
-    type: 'income',
-    amount: 250000,
-    category: 'ขายสินค้า',
-    description: 'รายได้จากโปรเจกต์ใหญ่',
-    date: '2026-01-08',
-    created_by: '1',
-    slip_url: 'https://example.com/slip3.jpg',
-    created_at: '2026-01-08T16:00:00Z',
-    user: { id: '1', name: 'สมชาย ใจดี', email: 'owner@demo.com', role: 'owner' },
-  },
-];
+// Empty initial transactions
+const mockTransactions: Transaction[] = [];
 
 export default function DashboardPage() {
   const router = useRouter();

@@ -8,62 +8,29 @@ import TopBar, { MobileSearchBar } from '@/components/TopBar';
 import { Plus, Filter, Download, Trash2, Edit2 } from 'lucide-react';
 import { User, Transaction, TransactionType, Category } from '@/types/database';
 
-// Mock Data
+// Default User
 const mockUser: User = {
   id: '1',
-  name: 'สมชาย ใจดี',
-  email: 'owner@demo.com',
+  name: 'ผู้ใช้งาน',
+  email: 'user@demo.com',
   role: 'owner',
 };
 
+// Default Categories
 const mockCategories: Category[] = [
   { id: '1', name: 'ขายสินค้า', type: 'income' },
   { id: '2', name: 'บริการ', type: 'income' },
-  { id: '3', name: 'ค่าเช่า', type: 'expense' },
-  { id: '4', name: 'ค่าน้ำค่าไฟ', type: 'expense' },
-  { id: '5', name: 'เงินเดือน', type: 'expense' },
-  { id: '6', name: 'อุปกรณ์สำนักงาน', type: 'expense' },
-  { id: '7', name: 'การตลาด', type: 'expense' },
+  { id: '3', name: 'รายได้อื่นๆ', type: 'income' },
+  { id: '4', name: 'ค่าเช่า', type: 'expense' },
+  { id: '5', name: 'ค่าน้ำค่าไฟ', type: 'expense' },
+  { id: '6', name: 'เงินเดือน', type: 'expense' },
+  { id: '7', name: 'อุปกรณ์สำนักงาน', type: 'expense' },
+  { id: '8', name: 'การตลาด', type: 'expense' },
+  { id: '9', name: 'ค่าใช้จ่ายอื่นๆ', type: 'expense' },
 ];
 
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'income',
-    amount: 150000,
-    category: 'ขายสินค้า',
-    description: 'รายได้จากการขายสินค้า',
-    date: '2026-01-15',
-    created_by: '1',
-    slip_url: null,
-    created_at: '2026-01-15T10:00:00Z',
-    user: { id: '1', name: 'สมชาย ใจดี', email: 'owner@demo.com', role: 'owner' },
-  },
-  {
-    id: '2',
-    type: 'expense',
-    amount: 45000,
-    category: 'ค่าเช่า',
-    description: 'ค่าเช่าสำนักงาน',
-    date: '2026-01-14',
-    created_by: '2',
-    slip_url: 'https://example.com/slip1.jpg',
-    created_at: '2026-01-14T09:00:00Z',
-    user: { id: '2', name: 'สมหญิง รักงาน', email: 'admin@demo.com', role: 'admin' },
-  },
-  {
-    id: '3',
-    type: 'income',
-    amount: 85000,
-    category: 'บริการ',
-    description: 'รายได้จากบริการให้คำปรึกษา',
-    date: '2026-01-13',
-    created_by: '1',
-    slip_url: null,
-    created_at: '2026-01-13T14:00:00Z',
-    user: { id: '1', name: 'สมชาย ใจดี', email: 'owner@demo.com', role: 'owner' },
-  },
-];
+// Empty initial transactions
+const mockTransactions: Transaction[] = [];
 
 // Format currency
 function formatCurrency(amount: number): string {

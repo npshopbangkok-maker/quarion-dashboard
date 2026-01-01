@@ -17,32 +17,21 @@ import {
 } from 'lucide-react';
 import { User, UserRole } from '@/types/database';
 
-// Mock Data
+// Default User
 const mockUser: User = {
   id: '1',
-  name: 'สมชาย ใจดี',
-  email: 'owner@demo.com',
+  name: 'ผู้ใช้งาน',
+  email: 'user@demo.com',
   role: 'owner',
 };
 
+// Initial user (just current user)
 const mockUsers: User[] = [
   {
     id: '1',
-    name: 'สมชาย ใจดี',
-    email: 'owner@demo.com',
+    name: 'ผู้ใช้งาน',
+    email: 'user@demo.com',
     role: 'owner',
-  },
-  {
-    id: '2',
-    name: 'สมหญิง รักงาน',
-    email: 'admin@demo.com',
-    role: 'admin',
-  },
-  {
-    id: '3',
-    name: 'สมศักดิ์ ดูเฉยๆ',
-    email: 'viewer@demo.com',
-    role: 'viewer',
   },
 ];
 
