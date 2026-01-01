@@ -25,7 +25,8 @@ import {
   DailyFlowDirection,
   YearlyOverviewDashboard,
   RecentAdminActivity,
-  CurrentBalanceCard
+  CurrentBalanceCard,
+  AICFOAdvisor
 } from '@/components/owner';
 
 export default function AnalyticsPage() {
@@ -124,7 +125,10 @@ export default function AnalyticsPage() {
                 {/* Row 4: Monthly Report */}
                 <MonthlyReport transactions={transactions} user={user} />
 
-                {/* Row 5: Admin Activity + Yearly Overview */}
+                {/* Row 5: AI CFO Advisor */}
+                <AICFOAdvisor transactions={transactions} user={user} />
+
+                {/* Row 6: Admin Activity + Yearly Overview */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   <RecentAdminActivity transactions={transactions} user={user} />
                   <YearlyOverviewDashboard transactions={transactions} user={user} />
