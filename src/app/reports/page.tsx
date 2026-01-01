@@ -127,7 +127,7 @@ export default function ReportsPage() {
       <main className="lg:ml-64 min-h-screen transition-all duration-300 mobile-content-pt">
         <TopBar user={user} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
-        <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
+        <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
