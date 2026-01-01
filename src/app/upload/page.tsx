@@ -52,6 +52,7 @@ export default function UploadPage() {
   // OCR result
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
   const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrAbortController, setOcrAbortController] = useState<AbortController | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -104,6 +105,15 @@ export default function UploadPage() {
       setUploadStatus('scanning');
       setOcrError(null);
       
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      setOcrAbortController(controller);
+      
+      // Set timeout - 15 seconds max
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 15000);
+      
       try {
         const formDataOcr = new FormData();
         formDataOcr.append('image', file);
@@ -111,7 +121,10 @@ export default function UploadPage() {
         const response = await fetch('/api/ocr', {
           method: 'POST',
           body: formDataOcr,
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error('OCR failed');
@@ -144,13 +157,28 @@ export default function UploadPage() {
         }
       } catch (error) {
         console.error('OCR Error:', error);
-        setOcrError('ไม่สามารถอ่านข้อมูลจากสลิปได้ กรุณากรอกข้อมูลเอง');
+        if (error instanceof Error && error.name === 'AbortError') {
+          setOcrError('การสแกนใช้เวลานานเกินไป กรุณากรอกข้อมูลเอง');
+        } else {
+          setOcrError('ไม่สามารถอ่านข้อมูลจากสลิปได้ กรุณากรอกข้อมูลเอง');
+        }
         setUploadStatus('scanned');
+      } finally {
+        setOcrAbortController(null);
       }
     } else {
       setUploadStatus('scanned');
     }
   }, []);
+
+  // Skip OCR and allow manual entry
+  const skipOcr = useCallback(() => {
+    if (ocrAbortController) {
+      ocrAbortController.abort();
+    }
+    setOcrError(null);
+    setUploadStatus('scanned');
+  }, [ocrAbortController]);
 
   // Handle drag events
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -282,9 +310,9 @@ export default function UploadPage() {
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold">สแกนสลิปอัตโนมัติ</h3>
+                <h3 className="font-semibold">อัปโหลดสลิปและบันทึก</h3>
                 <p className="text-sm text-white/80">
-                  อัปโหลดรูปสลิป ระบบจะอ่านจำนวนเงินและวันที่ให้อัตโนมัติ คุณแค่เลือกหมวดหมู่
+                  อัปโหลดรูปสลิป เลือกหมวดหมู่ แล้วกรอกจำนวนเงิน (หรือรอให้ระบบอ่านให้)
                 </p>
               </div>
             </div>
@@ -377,6 +405,14 @@ export default function UploadPage() {
                           <div className="text-center text-white">
                             <Scan className="w-12 h-12 animate-pulse mx-auto mb-2" />
                             <p>กำลังอ่านข้อมูลจากสลิป...</p>
+                            <p className="text-sm text-white/70 mt-1">อาจใช้เวลา 10-15 วินาที</p>
+                            <button
+                              onClick={skipOcr}
+                              className="mt-3 px-4 py-2 bg-white/20 hover:bg-white/30 
+                                         rounded-lg text-sm transition-colors"
+                            >
+                              ข้ามการสแกน (กรอกเอง)
+                            </button>
                           </div>
                         )}
                         {uploadStatus === 'uploading' && (
