@@ -58,14 +58,14 @@ function CustomLegend({ payload }: { payload?: Array<{ value: string; color: str
   if (!payload) return null;
   
   return (
-    <ul className="flex flex-wrap justify-center gap-3 mt-4">
+    <ul className="flex flex-wrap justify-center gap-2 mt-2">
       {payload.map((entry, index) => (
-        <li key={`legend-${index}`} className="flex items-center gap-2">
+        <li key={`legend-${index}`} className="flex items-center gap-1">
           <span 
-            className="w-3 h-3 rounded-full" 
+            className="w-2 h-2 rounded-full flex-shrink-0" 
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-sm text-gray-600">{entry.value}</span>
+          <span className="text-xs text-gray-600 truncate max-w-[60px] lg:max-w-none">{entry.value}</span>
         </li>
       ))}
     </ul>
@@ -108,19 +108,19 @@ export default function CategoryDonutChart({ data, isLoading = false }: Category
 
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+      <h3 className="text-base lg:text-lg font-semibold text-gray-800 mb-4">
         หมวดหมู่ค่าใช้จ่าย
       </h3>
       
-      <div className="h-72">
+      <div className="h-48 lg:h-72">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={90}
+              innerRadius={40}
+              outerRadius={65}
               paddingAngle={2}
               dataKey="value"
               nameKey="name"

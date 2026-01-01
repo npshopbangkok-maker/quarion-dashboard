@@ -58,14 +58,43 @@ export default function TransactionsTable({
 
   return (
     <div className="card">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-800">รายการล่าสุด</h3>
-        <span className="text-sm text-gray-500">
+      <div className="flex items-center justify-between mb-4 lg:mb-6">
+        <h3 className="text-base lg:text-lg font-semibold text-gray-800">รายการล่าสุด</h3>
+        <span className="text-xs lg:text-sm text-gray-500">
           {transactions.length} รายการ
         </span>
       </div>
 
-      <div className="table-container">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {paginatedTransactions.length === 0 ? (
+          <div className="text-center py-8 text-gray-400 text-sm">ไม่มีรายการ</div>
+        ) : (
+          paginatedTransactions.map((transaction) => (
+            <div key={transaction.id} className="p-3 bg-gray-50 rounded-xl">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                    ${transaction.type === 'income' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700'}`}>
+                    {transaction.type === 'income' ? 'รายรับ' : 'รายจ่าย'}
+                  </span>
+                  <p className="text-xs text-gray-500 mt-1">{formatDate(transaction.date)}</p>
+                </div>
+                <p className={`text-sm font-bold ${transaction.type === 'income' ? 'text-purple-600' : 'text-red-600'}`}>
+                  {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                </p>
+              </div>
+              <p className="text-sm font-medium text-gray-700">{transaction.category}</p>
+              {transaction.description && (
+                <p className="text-xs text-gray-500 truncate">{transaction.description}</p>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="table-container hidden lg:block">
         <table>
           <thead>
             <tr>
@@ -139,10 +168,10 @@ export default function TransactionsTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-          <p className="text-sm text-gray-500">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 lg:mt-6 pt-4 border-t border-gray-100">
+          <p className="text-xs lg:text-sm text-gray-500">
             แสดง {startIndex + 1}-{Math.min(startIndex + itemsPerPage, transactions.length)} 
-            จาก {transactions.length} รายการ
+            จาก {transactions.length}
           </p>
           
           <div className="flex items-center gap-2">
@@ -152,11 +181,11 @@ export default function TransactionsTable({
               className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 
                          disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600" />
             </button>
             
-            <span className="text-sm text-gray-600 px-4">
-              หน้า {currentPage} / {totalPages}
+            <span className="text-xs lg:text-sm text-gray-600 px-2 lg:px-4">
+              {currentPage} / {totalPages}
             </span>
             
             <button
@@ -165,7 +194,7 @@ export default function TransactionsTable({
               className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 
                          disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600" />
             </button>
           </div>
         </div>

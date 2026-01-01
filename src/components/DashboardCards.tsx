@@ -107,15 +107,15 @@ export default function DashboardCards({ summary, isLoading = false }: Dashboard
             <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-50`}></div>
             
             <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="order-2 sm:order-1">
-                <p className="text-xs lg:text-sm text-gray-500 font-medium mb-0.5 lg:mb-1">{card.title}</p>
-                <p className={`text-lg lg:text-2xl font-bold ${card.textColor}`}>
+              <div className="order-2 sm:order-1 min-w-0 flex-1">
+                <p className="text-xs lg:text-sm text-gray-500 font-medium mb-0.5 lg:mb-1 truncate">{card.title}</p>
+                <p className={`text-base sm:text-lg lg:text-2xl font-bold ${card.textColor} truncate`}>
                   {isCurrency ? formatCurrency(card.value) : formatNumber(card.value)}
                 </p>
               </div>
               
               {/* Icon */}
-              <div className={`${card.iconBg} p-2 lg:p-3 rounded-lg lg:rounded-xl shadow-lg order-1 sm:order-2 self-start sm:self-auto`}>
+              <div className={`${card.iconBg} p-2 lg:p-3 rounded-lg lg:rounded-xl shadow-lg order-1 sm:order-2 flex-shrink-0`}>
                 <Icon className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
               </div>
             </div>
