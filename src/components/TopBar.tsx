@@ -64,7 +64,7 @@ export function MobileSearchBar({ searchQuery = '', onSearchChange }: {
   onSearchChange?: (query: string) => void;
 }) {
   return (
-    <div className="lg:hidden px-4 py-3 bg-white border-b border-gray-100">
+    <div className="lg:hidden fixed top-16 left-0 right-0 z-40 px-4 py-3 bg-white border-b border-gray-100">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input

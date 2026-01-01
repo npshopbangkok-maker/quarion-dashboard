@@ -161,7 +161,7 @@ export default function UploadPage() {
       <Sidebar user={user} onLogout={handleLogout} />
       <MobileNav user={user} onLogout={handleLogout} />
 
-      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-20 lg:pt-0">
+      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-36 lg:pt-0">
         <TopBar user={user} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
         <MobileSearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
