@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, LogIn, User, Shield, Users } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,12 +39,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const fillCredentials = (user: string, pass: string) => {
-    setUsername(user);
-    setPassword(pass);
-    setError('');
   };
 
   if (authLoading) {
@@ -179,55 +172,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Demo Credentials - บัญชีทดสอบ */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-center text-sm text-gray-500 mb-3">บัญชีทดสอบ (คลิกเพื่อเติมข้อมูล)</p>
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => fillCredentials('owner', 'quarion2024')}
-                className="w-full p-3 bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 
-                           transition-colors flex items-center gap-3 text-left"
-              >
-                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="font-medium">Owner</div>
-                  <div className="text-xs text-purple-500">{ROLE_DESCRIPTIONS.owner}</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('admin', 'admin2024')}
-                className="w-full p-3 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 
-                           transition-colors flex items-center gap-3 text-left"
-              >
-                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="font-medium">Admin</div>
-                  <div className="text-xs text-blue-500">{ROLE_DESCRIPTIONS.admin}</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('viewer', 'viewer2024')}
-                className="w-full p-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 
-                           transition-colors flex items-center gap-3 text-left"
-              >
-                <div className="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <div className="font-medium">Viewer</div>
-                  <div className="text-xs text-gray-500">{ROLE_DESCRIPTIONS.viewer}</div>
-                </div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
