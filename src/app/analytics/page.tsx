@@ -24,7 +24,8 @@ import {
   MonthlyReport,
   DailyFlowDirection,
   YearlyOverviewDashboard,
-  RecentAdminActivity
+  RecentAdminActivity,
+  CurrentBalanceCard
 } from '@/components/owner';
 
 export default function AnalyticsPage() {
@@ -103,8 +104,9 @@ export default function AnalyticsPage() {
               </div>
             ) : (
               <>
-                {/* Row 1: Quick Snapshot + Progress Tracker + Saving Goal */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+                {/* Row 1: Current Balance + Quick Snapshot + Progress Tracker + Saving Goal */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                  <CurrentBalanceCard transactions={transactions} user={user} />
                   <QuickSnapshot transactions={transactions} user={user} />
                   <MonthlyProgressTracker transactions={transactions} user={user} />
                   <SavingGoalCard transactions={transactions} user={user} />

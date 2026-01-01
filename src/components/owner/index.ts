@@ -8,3 +8,4 @@ export { default as MonthlyReport } from './MonthlyReport';
 export { default as DailyFlowDirection } from './DailyFlowDirection';
 export { default as YearlyOverviewDashboard } from './YearlyOverviewDashboard';
 export { default as RecentAdminActivity } from './RecentAdminActivity';
+export { default as CurrentBalanceCard } from './CurrentBalanceCard';
