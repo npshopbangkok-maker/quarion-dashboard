@@ -147,24 +147,6 @@ export default function UsersPage() {
         <TopBar user={user} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
         <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
-          {/* Mobile Search */}
-          <div className="lg:hidden">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="ค้นหาผู้ใช้..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 
-                           rounded-xl text-base focus:outline-none focus:ring-2 
-                           focus:ring-purple-500/20 focus:border-purple-500 transition-all shadow-sm"
-              />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
-
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
