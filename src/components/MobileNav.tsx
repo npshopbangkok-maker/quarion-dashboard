@@ -78,9 +78,9 @@ export default function MobileNav({ user, onLogout }: MobileNavProps) {
 
   return (
     <>
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#1e1e2d] text-white h-14">
-        <div className="flex items-center justify-between px-3 h-full">
+      {/* Mobile Header - supports iOS safe area */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#1e1e2d] text-white pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center justify-between px-3 h-14">
           {/* Menu Button */}
           <button
             onClick={() => setIsOpen(true)}

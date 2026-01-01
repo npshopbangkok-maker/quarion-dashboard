@@ -10,6 +10,8 @@
   --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   --income-gradient: linear-gradient(135deg, #ec4899, #a855f7);
   --expense-gradient: linear-gradient(135deg, #f97316, #ef4444);
+  /* Mobile header height */
+  --mobile-header-height: 3.5rem; /* 56px = h-14 */
 }
 
 /* Global Styles */
@@ -29,6 +31,14 @@ body {
   color: var(--foreground);
   background: #f8fafc;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* iOS Safe Area Support */
+@supports (padding-top: env(safe-area-inset-top)) {
+  :root {
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* Scrollbar Styling */
@@ -62,6 +72,17 @@ body {
 @media (min-width: 1024px) {
   .card {
     padding: 24px;
+  }
+}
+
+/* Mobile Content Padding - accounts for fixed header + safe area */
+.mobile-content-pt {
+  padding-top: calc(var(--mobile-header-height) + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 1024px) {
+  .mobile-content-pt {
+    padding-top: 0;
   }
 }
 
