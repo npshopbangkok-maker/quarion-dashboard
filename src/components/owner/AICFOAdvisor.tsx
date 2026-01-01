@@ -51,30 +51,77 @@ export default function AICFOAdvisor({ transactions, user }: AICFOAdvisorProps) 
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentBalance, setCurrentBalance] = useState<number | null>(null);
+  
+  // All stored data from localStorage
+  const [storedData, setStoredData] = useState<{
+    currentBalance: number | null;
+    monthlyGoal: { amount: number; month: string } | null;
+    savingSettings: { percentage: number; goalAmount: number; currentSaved: number } | null;
+    scheduledTransactions: any[] | null;
+  }>({
+    currentBalance: null,
+    monthlyGoal: null,
+    savingSettings: null,
+    scheduledTransactions: null
+  });
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Load current balance from localStorage
+  // Load ALL data from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('quarion_current_balance');
-    if (saved) {
+    // Current Balance
+    const balanceSaved = localStorage.getItem('quarion_current_balance');
+    if (balanceSaved) {
       try {
-        const data = JSON.parse(saved);
-        setCurrentBalance(data.amount);
-      } catch (e) {
-        console.error('Failed to parse balance');
-      }
+        const data = JSON.parse(balanceSaved);
+        setStoredData(prev => ({ ...prev, currentBalance: data.amount }));
+      } catch (e) {}
+    }
+    
+    // Monthly Goal
+    const goalSaved = localStorage.getItem('owner-monthly-goal');
+    if (goalSaved) {
+      try {
+        const data = JSON.parse(goalSaved);
+        setStoredData(prev => ({ ...prev, monthlyGoal: data }));
+      } catch (e) {}
+    }
+    
+    // Saving Settings
+    const savingSaved = localStorage.getItem('owner-saving-settings');
+    if (savingSaved) {
+      try {
+        const data = JSON.parse(savingSaved);
+        setStoredData(prev => ({ ...prev, savingSettings: data }));
+      } catch (e) {}
+    }
+    
+    // Scheduled Transactions
+    const scheduledSaved = localStorage.getItem('quarion_scheduled_transactions');
+    if (scheduledSaved) {
+      try {
+        const data = JSON.parse(scheduledSaved);
+        setStoredData(prev => ({ ...prev, scheduledTransactions: data }));
+      } catch (e) {}
     }
   }, []);
 
-  // Prepare financial summary
+  // Prepare financial summary with ALL data
   const financialSummary = useMemo(() => {
     let totalIncome = 0;
     let totalExpense = 0;
     const incomeByCategory: { [key: string]: number } = {};
     const expenseByCategory: { [key: string]: number } = {};
     const monthlyData: { [key: string]: { income: number; expense: number } } = {};
+
+    // ALL transactions - not just recent
+    const allTransactionsList = transactions.map((t) => ({
+      date: t.date,
+      type: t.type,
+      amount: t.amount,
+      category: t.category,
+      description: t.description
+    }));
 
     transactions.forEach((t) => {
       if (t.type === 'income') {
@@ -105,16 +152,6 @@ export default function AICFOAdvisor({ transactions, user }: AICFOAdvisorProps) 
         profit: data.income - data.expense
       }));
 
-    const recentTransactions = transactions
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10)
-      .map((t) => ({
-        date: t.date,
-        type: t.type,
-        amount: t.amount,
-        category: t.category
-      }));
-
     return {
       totalIncome,
       totalExpense,
@@ -122,10 +159,15 @@ export default function AICFOAdvisor({ transactions, user }: AICFOAdvisorProps) 
       incomeByCategory,
       expenseByCategory,
       monthlyTrend,
-      recentTransactions,
-      currentBalance
+      totalTransactions: transactions.length,
+      allTransactions: allTransactionsList,
+      // All stored data
+      currentBalance: storedData.currentBalance,
+      monthlyGoal: storedData.monthlyGoal,
+      savingSettings: storedData.savingSettings,
+      scheduledTransactions: storedData.scheduledTransactions
     };
-  }, [transactions, currentBalance]);
+  }, [transactions, storedData]);
 
   // Scroll chat to bottom
   useEffect(() => {
