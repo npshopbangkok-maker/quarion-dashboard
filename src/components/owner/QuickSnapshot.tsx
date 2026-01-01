@@ -108,7 +108,7 @@ export default function QuickSnapshot({ transactions, user }: QuickSnapshotProps
   if (!isOwner(user)) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-800">
           ⚡ Quick Snapshot

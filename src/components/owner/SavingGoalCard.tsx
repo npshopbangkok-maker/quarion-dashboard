@@ -103,7 +103,7 @@ export default function SavingGoalCard({ transactions, user }: SavingGoalCardPro
   if (!isOwner(user)) return null;
 
   return (
-    <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-sm p-4 lg:p-6 text-white">
+    <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-sm p-3 lg:p-6 text-white overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <PiggyBank className="w-5 h-5" />

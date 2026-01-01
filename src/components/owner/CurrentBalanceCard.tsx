@@ -102,7 +102,7 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm border p-3 lg:p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Wallet className="w-5 h-5 text-blue-500" />

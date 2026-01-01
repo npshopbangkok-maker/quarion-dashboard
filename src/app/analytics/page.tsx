@@ -78,14 +78,14 @@ export default function AnalyticsPage() {
 
   return (
     <ProtectedPage requiredPage="analytics">
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 overflow-x-hidden">
         <Sidebar user={user} onLogout={handleLogout} />
         <MobileNav user={user} onLogout={handleLogout} />
 
-        <main className="lg:ml-64 min-h-screen transition-all duration-300 mobile-content-pt">
+        <main className="lg:ml-64 min-h-screen transition-all duration-300 mobile-content-pt overflow-x-hidden">
           <TopBar user={user} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
-          <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
+          <div className="p-3 lg:p-6 space-y-3 lg:space-y-6 max-w-full">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>

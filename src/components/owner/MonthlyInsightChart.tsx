@@ -96,7 +96,7 @@ export default function MonthlyInsightChart({ transactions, user }: MonthlyInsig
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
       <h3 className="text-lg font-bold text-gray-800 mb-4">
         📈 Monthly Insight
       </h3>

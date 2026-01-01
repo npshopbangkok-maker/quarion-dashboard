@@ -97,18 +97,18 @@ export default function FlowSignalHeatmap({ transactions, user }: FlowSignalHeat
   if (!isOwner(user)) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-800">📊 Flow Signal</h3>
-        <div className="flex items-center gap-2">
+        <h3 className="text-base lg:text-lg font-bold text-gray-800">📊 Flow Signal</h3>
+        <div className="flex items-center gap-1 lg:gap-2">
           <button
             onClick={() => navigateMonth(-1)}
             className="p-1 rounded hover:bg-gray-100"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm font-medium min-w-[120px] text-center">
+          <span className="text-xs lg:text-sm font-medium min-w-[80px] lg:min-w-[120px] text-center">
             {monthName}
           </span>
           <button

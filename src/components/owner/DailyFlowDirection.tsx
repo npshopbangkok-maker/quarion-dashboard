@@ -211,11 +211,12 @@ export default function DailyFlowDirection({ transactions, user }: DailyFlowDire
   if (!isOwner(user)) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+        <h3 className="text-base lg:text-lg font-bold text-gray-800 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-blue-500" />
-          Daily Flow Direction
+          <span className="hidden sm:inline">Daily Flow Direction</span>
+          <span className="sm:hidden">Flow Direction</span>
         </h3>
         <div className="text-xs text-gray-500">
           เทียบกับ {lastMonthName}

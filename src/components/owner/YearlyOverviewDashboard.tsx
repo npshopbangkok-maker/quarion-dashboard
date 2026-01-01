@@ -117,14 +117,15 @@ export default function YearlyOverviewDashboard({ transactions, user }: YearlyOv
   if (!isOwner(user)) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+      <div className="flex items-center justify-between mb-4 lg:mb-6">
+        <h3 className="text-base lg:text-lg font-bold text-gray-800 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-purple-500" />
-          Yearly Business Overview
+          <span className="hidden sm:inline">Yearly Business Overview</span>
+          <span className="sm:hidden">Yearly Overview</span>
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 lg:gap-2">
           <button
             onClick={() => setSelectedYear(y => y - 1)}
             disabled={selectedYear <= currentYear - 2}
@@ -132,7 +133,7 @@ export default function YearlyOverviewDashboard({ transactions, user }: YearlyOv
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="font-medium text-gray-700 min-w-[60px] text-center">
+          <span className="font-medium text-gray-700 min-w-[50px] lg:min-w-[60px] text-center text-sm lg:text-base">
             {selectedYear + 543}
           </span>
           <button
@@ -146,30 +147,30 @@ export default function YearlyOverviewDashboard({ transactions, user }: YearlyOv
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="bg-green-50 rounded-xl p-4">
-          <div className="text-sm text-green-600 mb-1">รายรับรวม</div>
-          <div className="text-xl font-bold text-green-700">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-3 mb-4 lg:mb-6">
+        <div className="bg-green-50 rounded-xl p-3 lg:p-4">
+          <div className="text-xs lg:text-sm text-green-600 mb-1">รายรับรวม</div>
+          <div className="text-base lg:text-xl font-bold text-green-700">
             ฿{yearlyData.totalIncome.toLocaleString()}
           </div>
         </div>
-        <div className="bg-red-50 rounded-xl p-4">
-          <div className="text-sm text-red-600 mb-1">รายจ่ายรวม</div>
-          <div className="text-xl font-bold text-red-700">
+        <div className="bg-red-50 rounded-xl p-3 lg:p-4">
+          <div className="text-xs lg:text-sm text-red-600 mb-1">รายจ่ายรวม</div>
+          <div className="text-base lg:text-xl font-bold text-red-700">
             ฿{yearlyData.totalExpense.toLocaleString()}
           </div>
         </div>
-        <div className={`rounded-xl p-4 ${yearlyData.totalProfit >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
-          <div className={`text-sm mb-1 ${yearlyData.totalProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+        <div className={`rounded-xl p-3 lg:p-4 ${yearlyData.totalProfit >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
+          <div className={`text-xs lg:text-sm mb-1 ${yearlyData.totalProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
             กำไรรวม
           </div>
-          <div className={`text-xl font-bold ${yearlyData.totalProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+          <div className={`text-base lg:text-xl font-bold ${yearlyData.totalProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
             ฿{yearlyData.totalProfit.toLocaleString()}
           </div>
         </div>
-        <div className="bg-purple-50 rounded-xl p-4">
-          <div className="text-sm text-purple-600 mb-1">กำไรเฉลี่ย/เดือน</div>
-          <div className="text-xl font-bold text-purple-700">
+        <div className="bg-purple-50 rounded-xl p-3 lg:p-4">
+          <div className="text-xs lg:text-sm text-purple-600 mb-1">กำไรเฉลี่ย/เดือน</div>
+          <div className="text-base lg:text-xl font-bold text-purple-700">
             ฿{Math.round(yearlyData.avgMonthlyProfit).toLocaleString()}
           </div>
         </div>

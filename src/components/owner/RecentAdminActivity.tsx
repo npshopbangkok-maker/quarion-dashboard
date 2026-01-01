@@ -120,7 +120,7 @@ export default function RecentAdminActivity({ transactions, user }: RecentAdminA
   const adminList = Object.values(stats.adminCounts);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm border p-3 lg:p-6 overflow-hidden">
       <div className="flex items-center gap-2 mb-4">
         <Users className="w-5 h-5 text-indigo-500" />
         <h3 className="font-semibold text-gray-800">กิจกรรมจากแอดมิน</h3>

@@ -103,7 +103,7 @@ export default function MonthlyProgressTracker({ transactions, user }: MonthlyPr
   if (!isOwner(user)) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+    <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <Target className="w-5 h-5 text-purple-500" />
