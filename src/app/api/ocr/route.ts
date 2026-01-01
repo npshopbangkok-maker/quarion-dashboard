@@ -71,10 +71,23 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('OpenAI API Error:', errorData);
+      console.error('OpenAI API Error:', JSON.stringify(errorData));
+      
+      // Return specific error message
+      let errorMessage = 'OpenAI API error';
+      if (errorData.error?.message) {
+        errorMessage = errorData.error.message;
+      }
+      if (errorData.error?.code === 'invalid_api_key') {
+        errorMessage = 'API Key ไม่ถูกต้อง';
+      }
+      if (errorData.error?.code === 'insufficient_quota') {
+        errorMessage = 'API quota หมด กรุณาเติมเงินใน OpenAI';
+      }
+      
       return NextResponse.json({
         success: false,
-        error: 'OpenAI API error',
+        error: errorMessage,
         data: null,
       });
     }
