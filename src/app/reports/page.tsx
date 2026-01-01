@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
-import TopBar, { MobileSearchBar } from '@/components/TopBar';
+import TopBar from '@/components/TopBar';
 import { 
   Download, 
   FileText, 
@@ -122,9 +122,8 @@ export default function ReportsPage() {
       <Sidebar user={user} onLogout={handleLogout} />
       <MobileNav user={user} onLogout={handleLogout} />
 
-      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-16 lg:pt-0">
+      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-[72px] lg:pt-0">
         <TopBar user={user} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-        <MobileSearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
         <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
           {/* Header */}

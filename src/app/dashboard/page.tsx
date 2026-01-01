@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
-import TopBar, { MobileSearchBar } from '@/components/TopBar';
+import TopBar from '@/components/TopBar';
 import DashboardCards from '@/components/DashboardCards';
 import { IncomeExpenseChart, CategoryDonutChart } from '@/components/Charts';
 import TransactionsTable from '@/components/TransactionsTable';
@@ -97,22 +97,34 @@ export default function DashboardPage() {
       <MobileNav user={user} onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-16 lg:pt-0">
+      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-[72px] lg:pt-0">
         {/* Desktop Top Bar */}
         <TopBar 
           user={user} 
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
-        
-        {/* Mobile Search */}
-        <MobileSearchBar 
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
 
         {/* Dashboard Content */}
         <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
+          {/* Mobile Search - Inside content */}
+          <div className="lg:hidden">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="ค้นหารายการ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 
+                           rounded-xl text-base focus:outline-none focus:ring-2 
+                           focus:ring-purple-500/20 focus:border-purple-500 transition-all shadow-sm"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
           {/* Page Title */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>

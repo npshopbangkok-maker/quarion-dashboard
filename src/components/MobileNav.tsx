@@ -79,28 +79,28 @@ export default function MobileNav({ user, onLogout }: MobileNavProps) {
   return (
     <>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#1e1e2d] text-white">
-        <div className="flex items-center justify-between px-4 h-16">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#1e1e2d] text-white h-[72px]">
+        <div className="flex items-center justify-between px-4 h-full">
           {/* Menu Button */}
           <button
             onClick={() => setIsOpen(true)}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-3 hover:bg-gray-700 rounded-xl transition-colors active:scale-95"
           >
             <Menu className="w-6 h-6" />
           </button>
 
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500 
-                            flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 
+                            flex items-center justify-center text-white font-bold text-lg shadow-lg">
               Q
             </div>
-            <span className="font-semibold">Quarion</span>
+            <span className="font-bold text-lg">Quarion</span>
           </div>
 
           {/* User Avatar */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 
-                          flex items-center justify-center text-white text-sm font-bold">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 
+                          flex items-center justify-center text-white font-bold shadow-lg">
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
         </div>
