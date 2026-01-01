@@ -12,7 +12,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 import { canAccessPage, PERMISSIONS, User } from '@/lib/auth';
 
@@ -46,6 +47,12 @@ const menuItems = [
     href: '/reports',
     icon: FileText,
     page: 'reports' as keyof typeof PERMISSIONS.pages,
+  },
+  {
+    name: 'Calendar',
+    href: '/calendar',
+    icon: Calendar,
+    page: 'calendar' as keyof typeof PERMISSIONS.pages,
   },
   {
     name: 'Users',

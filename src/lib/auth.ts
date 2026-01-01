@@ -103,6 +103,7 @@ export const PERMISSIONS = {
     transactions: ['owner', 'admin', 'viewer'] as UserRole[],
     upload: ['owner', 'admin'] as UserRole[],
     reports: ['owner', 'admin'] as UserRole[],
+    calendar: ['owner'] as UserRole[],
     settings: ['owner'] as UserRole[],
     users: ['owner'] as UserRole[]
   },
