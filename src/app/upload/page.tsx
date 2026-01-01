@@ -22,6 +22,7 @@ import { Category, TransactionType } from '@/types/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { createTransaction, fetchCategories } from '@/lib/database';
 import { getCategories, saveTransactions, getTransactions, generateId } from '@/lib/storage';
+import { notifyIncomeAdded, notifyExpenseAdded } from '@/lib/notifications';
 
 type UploadStatus = 'idle' | 'scanning' | 'scanned' | 'uploading' | 'success' | 'error';
 
@@ -241,6 +242,13 @@ export default function UploadPage() {
           user: user || undefined,
         };
         saveTransactions([newTransaction, ...existingTransactions]);
+      }
+      
+      // Send notification
+      if (formData.type === 'income') {
+        notifyIncomeAdded(parseFloat(formData.amount), formData.category, user?.name);
+      } else {
+        notifyExpenseAdded(parseFloat(formData.amount), formData.category, user?.name);
       }
       
       setUploadStatus('success');

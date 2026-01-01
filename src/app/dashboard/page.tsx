@@ -30,6 +30,7 @@ import {
   calculateMonthlyData as localCalculateMonthlyData,
   calculateCategoryData as localCalculateCategoryData,
 } from '@/lib/storage';
+import { startPaymentReminders, requestNotificationPermission } from '@/lib/notifications';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -74,6 +75,15 @@ export default function DashboardPage() {
     };
 
     loadData();
+  }, []);
+
+  // Start payment reminders
+  useEffect(() => {
+    // Request permission first, then start reminders
+    requestNotificationPermission().then(() => {
+      const cleanup = startPaymentReminders();
+      return cleanup;
+    });
   }, []);
 
   const handleLogout = () => {
