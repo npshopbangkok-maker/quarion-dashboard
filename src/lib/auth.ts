@@ -24,6 +24,16 @@ const USERS: { [username: string]: { password: string; user: User } } = {
       role: 'owner'
     }
   },
+  // Owner - skillfi99
+  'skillfi99': {
+    password: 'skillfi99',
+    user: {
+      id: '6',
+      name: 'Skillfi99',
+      email: 'skillfi99@quarion.com',
+      role: 'owner'
+    }
+  },
   // Admin - เพิ่ม/แก้ไข transactions, upload slips
   'admin': {
     password: 'admin2024',
