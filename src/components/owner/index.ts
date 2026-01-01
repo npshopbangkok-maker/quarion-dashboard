@@ -7,3 +7,4 @@ export { default as QuickSnapshot } from './QuickSnapshot';
 export { default as MonthlyReport } from './MonthlyReport';
 export { default as DailyFlowDirection } from './DailyFlowDirection';
 export { default as YearlyOverviewDashboard } from './YearlyOverviewDashboard';
+export { default as RecentAdminActivity } from './RecentAdminActivity';

@@ -23,7 +23,8 @@ import {
   QuickSnapshot,
   MonthlyReport,
   DailyFlowDirection,
-  YearlyOverviewDashboard
+  YearlyOverviewDashboard,
+  RecentAdminActivity
 } from '@/components/owner';
 
 export default function AnalyticsPage() {
@@ -121,8 +122,11 @@ export default function AnalyticsPage() {
                 {/* Row 4: Monthly Report */}
                 <MonthlyReport transactions={transactions} user={user} />
 
-                {/* Row 5: Yearly Overview */}
-                <YearlyOverviewDashboard transactions={transactions} user={user} />
+                {/* Row 5: Admin Activity + Yearly Overview */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                  <RecentAdminActivity transactions={transactions} user={user} />
+                  <YearlyOverviewDashboard transactions={transactions} user={user} />
+                </div>
               </>
             )}
           </div>
