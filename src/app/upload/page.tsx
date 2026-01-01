@@ -12,25 +12,14 @@ import {
   X, 
   CheckCircle, 
   AlertCircle,
-  Loader2,
-  Scan,
-  Sparkles
+  Loader2
 } from 'lucide-react';
 import { User, Category, TransactionType } from '@/types/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { createTransaction, fetchCategories } from '@/lib/database';
 import { getCategories, saveTransactions, getTransactions, initializeUser, generateId } from '@/lib/storage';
 
-type UploadStatus = 'idle' | 'scanning' | 'scanned' | 'uploading' | 'success' | 'error';
-
-interface OcrResult {
-  amount: number | null;
-  date: string | null;
-  time: string | null;
-  bankName: string | null;
-  refNumber: string | null;
-  rawText: string;
-}
+type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 
 interface FilePreview {
   file: File;
@@ -48,11 +37,6 @@ export default function UploadPage() {
   const [filePreview, setFilePreview] = useState<FilePreview | null>(null);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const [isDragActive, setIsDragActive] = useState(false);
-  
-  // OCR result
-  const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
-  const [ocrError, setOcrError] = useState<string | null>(null);
-  const [ocrAbortController, setOcrAbortController] = useState<AbortController | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -83,7 +67,7 @@ export default function UploadPage() {
 
   const handleLogout = () => router.push('/login');
 
-  // Handle file selection and OCR
+  // Handle file selection - NO automatic OCR (too slow on serverless)
   const handleFileSelect = useCallback(async (file: File) => {
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type === 'application/pdf';
@@ -100,85 +84,9 @@ export default function UploadPage() {
       type: isImage ? 'image' : 'pdf',
     });
 
-    // Only process images with OCR
-    if (isImage) {
-      setUploadStatus('scanning');
-      setOcrError(null);
-      
-      // Create abort controller for timeout
-      const controller = new AbortController();
-      setOcrAbortController(controller);
-      
-      // Set timeout - 15 seconds max
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 15000);
-      
-      try {
-        const formDataOcr = new FormData();
-        formDataOcr.append('image', file);
-
-        const response = await fetch('/api/ocr', {
-          method: 'POST',
-          body: formDataOcr,
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error('OCR failed');
-        }
-
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-          setOcrResult(result.data);
-          
-          // Auto-fill form with OCR data
-          if (result.data.amount) {
-            setFormData(prev => ({ ...prev, amount: result.data.amount.toString() }));
-          }
-          if (result.data.date) {
-            setFormData(prev => ({ ...prev, date: result.data.date }));
-          }
-          if (result.data.bankName) {
-            setFormData(prev => ({ 
-              ...prev, 
-              description: `${result.data.bankName}${result.data.refNumber ? ` (${result.data.refNumber})` : ''}`
-            }));
-          }
-          
-          setUploadStatus('scanned');
-        } else {
-          // OCR didn't find data, but still allow manual entry
-          setOcrError('ไม่สามารถอ่านข้อมูลจากสลิปได้ กรุณากรอกข้อมูลเอง');
-          setUploadStatus('scanned');
-        }
-      } catch (error) {
-        console.error('OCR Error:', error);
-        if (error instanceof Error && error.name === 'AbortError') {
-          setOcrError('การสแกนใช้เวลานานเกินไป กรุณากรอกข้อมูลเอง');
-        } else {
-          setOcrError('ไม่สามารถอ่านข้อมูลจากสลิปได้ กรุณากรอกข้อมูลเอง');
-        }
-        setUploadStatus('scanned');
-      } finally {
-        setOcrAbortController(null);
-      }
-    } else {
-      setUploadStatus('scanned');
-    }
+    // Skip OCR - just allow manual entry immediately
+    setUploadStatus('idle');
   }, []);
-
-  // Skip OCR and allow manual entry
-  const skipOcr = useCallback(() => {
-    if (ocrAbortController) {
-      ocrAbortController.abort();
-    }
-    setOcrError(null);
-    setUploadStatus('scanned');
-  }, [ocrAbortController]);
 
   // Handle drag events
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -213,8 +121,6 @@ export default function UploadPage() {
     }
     setFilePreview(null);
     setUploadStatus('idle');
-    setOcrResult(null);
-    setOcrError(null);
   };
 
   // Available categories based on type
@@ -299,23 +205,8 @@ export default function UploadPage() {
           <div>
             <h1 className="text-xl lg:text-2xl font-bold text-gray-800">Upload Slip</h1>
             <p className="text-sm lg:text-base text-gray-500">
-              อัปโหลดสลิปแล้วระบบจะอ่านข้อมูลอัตโนมัติ
+              อัปโหลดสลิปและบันทึกรายการ
             </p>
-          </div>
-
-          {/* OCR Feature Banner */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 text-white">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-xl">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold">อัปโหลดสลิปและบันทึก</h3>
-                <p className="text-sm text-white/80">
-                  อัปโหลดรูปสลิป เลือกหมวดหมู่ แล้วกรอกจำนวนเงิน (หรือรอให้ระบบอ่านให้)
-                </p>
-              </div>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
@@ -349,7 +240,7 @@ export default function UploadPage() {
                     <div className="inline-flex items-center justify-center w-12 h-12 lg:w-16 lg:h-16 
                                     bg-gradient-to-br from-pink-500 to-purple-500 
                                     rounded-2xl shadow-lg shadow-purple-500/25">
-                      <Scan className="w-8 h-8 text-white" />
+                      <Upload className="w-8 h-8 text-white" />
                     </div>
                     <div>
                       <p className="text-lg font-medium text-gray-700">
@@ -360,7 +251,7 @@ export default function UploadPage() {
                       </p>
                     </div>
                     <p className="text-xs text-gray-400">
-                      รองรับไฟล์ JPG, PNG (สูงสุด 10MB)
+                      รองรับไฟล์ JPG, PNG, PDF (สูงสุด 10MB)
                     </p>
                   </div>
                 </div>
@@ -389,7 +280,7 @@ export default function UploadPage() {
                     {/* Remove Button */}
                     <button
                       onClick={removeFile}
-                      disabled={uploadStatus === 'uploading' || uploadStatus === 'scanning'}
+                      disabled={uploadStatus === 'uploading'}
                       className="absolute top-3 right-3 p-2 bg-red-500 text-white 
                                  rounded-full hover:bg-red-600 transition-colors
                                  disabled:opacity-50"
@@ -398,23 +289,8 @@ export default function UploadPage() {
                     </button>
 
                     {/* Status Overlay */}
-                    {(uploadStatus === 'scanning' || uploadStatus === 'uploading' || 
-                      uploadStatus === 'success' || uploadStatus === 'error') && (
+                    {(uploadStatus === 'uploading' || uploadStatus === 'success' || uploadStatus === 'error') && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        {uploadStatus === 'scanning' && (
-                          <div className="text-center text-white">
-                            <Scan className="w-12 h-12 animate-pulse mx-auto mb-2" />
-                            <p>กำลังอ่านข้อมูลจากสลิป...</p>
-                            <p className="text-sm text-white/70 mt-1">อาจใช้เวลา 10-15 วินาที</p>
-                            <button
-                              onClick={skipOcr}
-                              className="mt-3 px-4 py-2 bg-white/20 hover:bg-white/30 
-                                         rounded-lg text-sm transition-colors"
-                            >
-                              ข้ามการสแกน (กรอกเอง)
-                            </button>
-                          </div>
-                        )}
                         {uploadStatus === 'uploading' && (
                           <div className="text-center text-white">
                             <Loader2 className="w-12 h-12 animate-spin mx-auto mb-2" />
@@ -436,33 +312,6 @@ export default function UploadPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* OCR Result */}
-                  {uploadStatus === 'scanned' && ocrResult && (
-                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-                      <div className="flex items-center gap-2 text-green-700 font-medium mb-2">
-                        <CheckCircle className="w-5 h-5" />
-                        <span>อ่านข้อมูลสำเร็จ</span>
-                      </div>
-                      <div className="text-sm text-green-600 space-y-1">
-                        {ocrResult.amount && (
-                          <p>จำนวนเงิน: ฿{ocrResult.amount.toLocaleString()}</p>
-                        )}
-                        {ocrResult.date && <p>วันที่: {ocrResult.date}</p>}
-                        {ocrResult.bankName && <p>ธนาคาร: {ocrResult.bankName}</p>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* OCR Error */}
-                  {ocrError && (
-                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                      <div className="flex items-center gap-2 text-yellow-700">
-                        <AlertCircle className="w-5 h-5" />
-                        <span className="text-sm">{ocrError}</span>
-                      </div>
-                    </div>
-                  )}
 
                   {/* File Info */}
                   <div className="mt-4 flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -488,11 +337,6 @@ export default function UploadPage() {
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 ข้อมูลรายการ
-                {ocrResult?.amount && (
-                  <span className="ml-2 text-sm font-normal text-green-600">
-                    (ข้อมูลจากสลิป)
-                  </span>
-                )}
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -523,13 +367,10 @@ export default function UploadPage() {
                   </div>
                 </div>
 
-                {/* Amount - Auto-filled from OCR */}
+                {/* Amount */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     จำนวนเงิน (บาท)
-                    {ocrResult?.amount && (
-                      <span className="ml-2 text-xs text-green-600">✓ อ่านจากสลิป</span>
-                    )}
                   </label>
                   <input
                     type="number"
@@ -538,17 +379,16 @@ export default function UploadPage() {
                     placeholder="0.00"
                     required
                     step="0.01"
-                    className={`w-full px-4 py-3 border rounded-xl
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
                                focus:outline-none focus:ring-2 focus:ring-purple-500/20 
-                               focus:border-purple-500
-                               ${ocrResult?.amount ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}
+                               focus:border-purple-500"
                   />
                 </div>
 
-                {/* Category - REQUIRED - User must select */}
+                {/* Category */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    หมวดหมู่ <span className="text-red-500">*</span>
+                    หมวดหมู่
                   </label>
                   <select
                     value={formData.category}
@@ -581,30 +421,26 @@ export default function UploadPage() {
                   />
                 </div>
 
-                {/* Date - Auto-filled from OCR */}
+                {/* Date */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     วันที่
-                    {ocrResult?.date && (
-                      <span className="ml-2 text-xs text-green-600">✓ อ่านจากสลิป</span>
-                    )}
                   </label>
                   <input
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                     required
-                    className={`w-full px-4 py-3 border rounded-xl
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
                                focus:outline-none focus:ring-2 focus:ring-purple-500/20 
-                               focus:border-purple-500
-                               ${ocrResult?.date ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}
+                               focus:border-purple-500"
                   />
                 </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={uploadStatus === 'uploading' || uploadStatus === 'scanning' || !filePreview}
+                  disabled={uploadStatus === 'uploading' || !filePreview}
                   className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 
                              text-white font-semibold rounded-xl shadow-lg 
                              shadow-purple-500/25 hover:shadow-purple-500/40 
@@ -615,11 +451,6 @@ export default function UploadPage() {
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       <span>กำลังบันทึก...</span>
-                    </>
-                  ) : uploadStatus === 'scanning' ? (
-                    <>
-                      <Scan className="w-5 h-5 animate-pulse" />
-                      <span>กำลังอ่านสลิป...</span>
                     </>
                   ) : (
                     <>
