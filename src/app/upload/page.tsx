@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Category, TransactionType } from '@/types/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { createTransaction, fetchCategories } from '@/lib/database';
+import { createTransaction } from '@/lib/database';
 import { getCategories, saveTransactions, getTransactions, generateId } from '@/lib/storage';
 import { notifyIncomeAdded, notifyExpenseAdded } from '@/lib/notifications';
 
@@ -66,17 +66,9 @@ export default function UploadPage() {
 
   // Load user and categories
   useEffect(() => {
-    const loadData = async () => {
-      let loadedCategories: Category[] = [];
-      if (isSupabaseConfigured()) {
-        loadedCategories = await fetchCategories();
-      }
-      if (loadedCategories.length === 0) {
-        loadedCategories = getCategories();
-      }
-      setCategories(loadedCategories);
-    };
-    loadData();
+    // Always use localStorage for categories (user-managed)
+    const loadedCategories = getCategories();
+    setCategories(loadedCategories);
   }, []);
 
   const handleLogout = () => {

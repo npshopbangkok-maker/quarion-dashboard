@@ -15,7 +15,6 @@ import {
   createTransaction as dbCreateTransaction,
   updateTransaction as dbUpdateTransaction,
   deleteTransaction as dbDeleteTransaction,
-  fetchCategories,
 } from '@/lib/database';
 import {
   getTransactions,
@@ -61,21 +60,19 @@ export default function TransactionsPage() {
       setIsLoading(true);
       try {
         let loadedTransactions: Transaction[] = [];
-        let loadedCategories: Category[] = [];
 
         if (isSupabaseConfigured()) {
-          // Try Supabase first
+          // Try Supabase first for transactions
           loadedTransactions = await fetchTransactions();
-          loadedCategories = await fetchCategories();
         }
 
         // Fallback to localStorage if Supabase not configured or returns empty
         if (loadedTransactions.length === 0) {
           loadedTransactions = getTransactions();
         }
-        if (loadedCategories.length === 0) {
-          loadedCategories = getCategories();
-        }
+
+        // Always use localStorage for categories (user-managed)
+        const loadedCategories = getCategories();
 
         setTransactions(loadedTransactions);
         setCategories(loadedCategories);
