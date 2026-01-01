@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import TopBar from '@/components/TopBar';
 import ProtectedPage from '@/components/ProtectedPage';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCategories, saveCategories, generateId } from '@/lib/storage';
+import { Category, TransactionType } from '@/types/database';
 import { 
   User as UserIcon, 
   Bell, 
@@ -15,7 +17,15 @@ import {
   Database,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  Tags,
+  Plus,
+  Trash2,
+  Edit3,
+  Check,
+  X,
+  ArrowUpCircle,
+  ArrowDownCircle
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -47,6 +57,81 @@ export default function SettingsPage() {
     monthlyReport: true,
   });
 
+  // Categories state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryType, setNewCategoryType] = useState<TransactionType>('income');
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+
+  // Load categories on mount
+  useEffect(() => {
+    setCategories(getCategories());
+  }, []);
+
+  // Add new category
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      alert('กรุณากรอกชื่อหมวดหมู่');
+      return;
+    }
+    
+    // Check duplicate
+    const exists = categories.some(
+      c => c.name.toLowerCase() === newCategoryName.trim().toLowerCase() && c.type === newCategoryType
+    );
+    if (exists) {
+      alert('หมวดหมู่นี้มีอยู่แล้ว');
+      return;
+    }
+
+    const newCategory: Category = {
+      id: generateId(),
+      name: newCategoryName.trim(),
+      type: newCategoryType,
+    };
+    
+    const updated = [...categories, newCategory];
+    setCategories(updated);
+    saveCategories(updated);
+    setNewCategoryName('');
+  };
+
+  // Delete category
+  const handleDeleteCategory = (id: string) => {
+    if (!confirm('ต้องการลบหมวดหมู่นี้?')) return;
+    const updated = categories.filter(c => c.id !== id);
+    setCategories(updated);
+    saveCategories(updated);
+  };
+
+  // Start editing
+  const startEditCategory = (category: Category) => {
+    setEditingCategory(category.id);
+    setEditingName(category.name);
+  };
+
+  // Save edit
+  const saveEditCategory = (id: string) => {
+    if (!editingName.trim()) {
+      alert('กรุณากรอกชื่อหมวดหมู่');
+      return;
+    }
+    const updated = categories.map(c => 
+      c.id === id ? { ...c, name: editingName.trim() } : c
+    );
+    setCategories(updated);
+    saveCategories(updated);
+    setEditingCategory(null);
+    setEditingName('');
+  };
+
+  // Cancel edit
+  const cancelEditCategory = () => {
+    setEditingCategory(null);
+    setEditingName('');
+  };
+
   const handleLogout = () => {
     logout();
     router.push('/login');
@@ -73,11 +158,15 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'profile', label: 'โปรไฟล์', icon: UserIcon },
+    { id: 'categories', label: 'หมวดหมู่', icon: Tags },
     { id: 'security', label: 'ความปลอดภัย', icon: Lock },
     { id: 'notifications', label: 'การแจ้งเตือน', icon: Bell },
     { id: 'appearance', label: 'ธีม', icon: Palette },
     { id: 'database', label: 'ฐานข้อมูล', icon: Database },
   ];
+
+  const incomeCategories = categories.filter(c => c.type === 'income');
+  const expenseCategories = categories.filter(c => c.type === 'expense');
 
   return (
     <ProtectedPage requiredPage="settings">
@@ -186,6 +275,184 @@ export default function SettingsPage() {
                       <Save className="w-5 h-5" />
                       <span>{isSaving ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}</span>
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Categories Tab */}
+              {activeTab === 'categories' && (
+                <div className="card">
+                  <h3 className="text-base lg:text-lg font-semibold text-gray-800 mb-4 lg:mb-6">
+                    จัดการหมวดหมู่
+                  </h3>
+                  
+                  {/* Add New Category */}
+                  <div className="p-4 bg-gray-50 rounded-xl mb-6">
+                    <div className="text-sm font-medium text-gray-700 mb-3">เพิ่มหมวดหมู่ใหม่</div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder="ชื่อหมวดหมู่..."
+                          className="w-full px-4 py-2 border border-gray-200 rounded-lg
+                                     focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                          onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <select
+                          value={newCategoryType}
+                          onChange={(e) => setNewCategoryType(e.target.value as TransactionType)}
+                          className="px-3 py-2 border border-gray-200 rounded-lg bg-white
+                                     focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                        >
+                          <option value="income">รายรับ</option>
+                          <option value="expense">รายจ่าย</option>
+                        </select>
+                        <button
+                          onClick={handleAddCategory}
+                          className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600
+                                     transition-colors flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="hidden sm:inline">เพิ่ม</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                    {/* Income Categories */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <ArrowUpCircle className="w-5 h-5 text-green-500" />
+                        <span className="font-medium text-gray-700">หมวดหมู่รายรับ ({incomeCategories.length})</span>
+                      </div>
+                      <div className="space-y-2">
+                        {incomeCategories.length === 0 ? (
+                          <p className="text-sm text-gray-400 text-center py-4">ยังไม่มีหมวดหมู่</p>
+                        ) : (
+                          incomeCategories.map((cat) => (
+                            <div
+                              key={cat.id}
+                              className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-lg"
+                            >
+                              {editingCategory === cat.id ? (
+                                <div className="flex-1 flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                    className="flex-1 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                                    autoFocus
+                                    onKeyPress={(e) => e.key === 'Enter' && saveEditCategory(cat.id)}
+                                  />
+                                  <button
+                                    onClick={() => saveEditCategory(cat.id)}
+                                    className="p-1 text-green-600 hover:bg-green-100 rounded"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={cancelEditCategory}
+                                    className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="text-gray-700">{cat.name}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => startEditCategory(cat)}
+                                      className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteCategory(cat.id)}
+                                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expense Categories */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <ArrowDownCircle className="w-5 h-5 text-red-500" />
+                        <span className="font-medium text-gray-700">หมวดหมู่รายจ่าย ({expenseCategories.length})</span>
+                      </div>
+                      <div className="space-y-2">
+                        {expenseCategories.length === 0 ? (
+                          <p className="text-sm text-gray-400 text-center py-4">ยังไม่มีหมวดหมู่</p>
+                        ) : (
+                          expenseCategories.map((cat) => (
+                            <div
+                              key={cat.id}
+                              className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-lg"
+                            >
+                              {editingCategory === cat.id ? (
+                                <div className="flex-1 flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                    className="flex-1 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                                    autoFocus
+                                    onKeyPress={(e) => e.key === 'Enter' && saveEditCategory(cat.id)}
+                                  />
+                                  <button
+                                    onClick={() => saveEditCategory(cat.id)}
+                                    className="p-1 text-green-600 hover:bg-green-100 rounded"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={cancelEditCategory}
+                                    className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="text-gray-700">{cat.name}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => startEditCategory(cat)}
+                                      className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteCategory(cat.id)}
+                                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t text-xs text-gray-400">
+                    💡 หมวดหมู่ที่เพิ่มจะใช้ได้ทันทีในหน้า Upload Slip และ Transactions
                   </div>
                 </div>
               )}
