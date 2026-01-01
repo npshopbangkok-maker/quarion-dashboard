@@ -126,8 +126,8 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="p-4 flex-1">
-        <ul className="space-y-2">
+      <nav className="p-4 flex-1 overflow-y-auto">
+        <ul className="space-y-3">
           {visibleMenuItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             const Icon = item.icon;

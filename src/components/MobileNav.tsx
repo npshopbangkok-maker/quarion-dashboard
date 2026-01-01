@@ -153,7 +153,7 @@ export default function MobileNav({ user, onLogout }: MobileNavProps) {
 
         {/* Navigation Menu */}
         <nav className="p-4 flex-1 overflow-y-auto">
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {visibleMenuItems.map((item) => {
               const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
               const Icon = item.icon;
@@ -164,15 +164,15 @@ export default function MobileNav({ user, onLogout }: MobileNavProps) {
                     href={item.href}
                     onClick={() => setIsOpen(false)}
                     className={`
-                      flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                      flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-200 min-h-[52px]
                       ${isActive 
                         ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg shadow-purple-500/25' 
                         : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                       }
                     `}
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="font-medium">{item.name}</span>
+                    <Icon className="w-6 h-6 flex-shrink-0" />
+                    <span className="font-medium text-base">{item.name}</span>
                   </Link>
                 </li>
               );
@@ -187,12 +187,12 @@ export default function MobileNav({ user, onLogout }: MobileNavProps) {
               setIsOpen(false);
               onLogout();
             }}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl
+            className="flex items-center gap-4 w-full px-4 py-4 rounded-xl min-h-[52px]
                        text-gray-400 hover:text-white hover:bg-red-500/20 
                        transition-all duration-200"
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium">Logout</span>
+            <LogOut className="w-6 h-6 flex-shrink-0" />
+            <span className="font-medium text-base">Logout</span>
           </button>
         </div>
       </aside>
