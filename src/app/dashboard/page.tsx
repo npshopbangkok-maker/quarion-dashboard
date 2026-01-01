@@ -97,7 +97,7 @@ export default function DashboardPage() {
       <MobileNav user={user} onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-[72px] lg:pt-0">
+      <main className="lg:ml-64 min-h-screen transition-all duration-300 pt-14 lg:pt-0">
         {/* Desktop Top Bar */}
         <TopBar 
           user={user} 
