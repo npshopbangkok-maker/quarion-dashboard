@@ -1,16 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn, User, Shield, Users } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const { user, login, isLoading: authLoading } = useAuth();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      router.push('/dashboard');
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,21 +28,33 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // For demo purposes, accept any credentials
-      // In production, this would use Supabase auth
-      // const { user, error } = await signIn(email, password);
+      const success = await login(username, password);
       
-      // Simulate login delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redirect to dashboard
-      router.push('/dashboard');
+      if (success) {
+        router.push('/dashboard');
+      } else {
+        setError('Username หรือ Password ไม่ถูกต้อง');
+      }
     } catch (err) {
       setError('เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const fillCredentials = (user: string, pass: string) => {
+    setUsername(user);
+    setPassword(pass);
+    setError('');
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 
@@ -61,17 +83,17 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* Username Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                อีเมล
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="กรอก username"
                 required
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
                            focus:outline-none focus:ring-2 focus:ring-purple-500/20 
@@ -107,8 +129,8 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between text-sm">
+            {/* Remember Me */}
+            <div className="flex items-center text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input 
                   type="checkbox" 
@@ -117,9 +139,6 @@ export default function LoginPage() {
                 />
                 <span className="text-gray-600">จดจำฉัน</span>
               </label>
-              <a href="#" className="text-purple-500 hover:text-purple-600 transition-colors">
-                ลืมรหัสผ่าน?
-              </a>
             </div>
 
             {/* Submit Button */}
@@ -161,30 +180,51 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
+          {/* Demo Credentials - บัญชีทดสอบ */}
           <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-center text-sm text-gray-500 mb-3">บัญชีทดสอบ</p>
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <p className="text-center text-sm text-gray-500 mb-3">บัญชีทดสอบ (คลิกเพื่อเติมข้อมูล)</p>
+            <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => { setEmail('owner@demo.com'); setPassword('demo123'); }}
-                className="p-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+                onClick={() => fillCredentials('owner', 'quarion2024')}
+                className="w-full p-3 bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 
+                           transition-colors flex items-center gap-3 text-left"
               >
-                Owner
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="font-medium">Owner</div>
+                  <div className="text-xs text-purple-500">{ROLE_DESCRIPTIONS.owner}</div>
+                </div>
               </button>
               <button
                 type="button"
-                onClick={() => { setEmail('admin@demo.com'); setPassword('demo123'); }}
-                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                onClick={() => fillCredentials('admin', 'admin2024')}
+                className="w-full p-3 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 
+                           transition-colors flex items-center gap-3 text-left"
               >
-                Admin
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="font-medium">Admin</div>
+                  <div className="text-xs text-blue-500">{ROLE_DESCRIPTIONS.admin}</div>
+                </div>
               </button>
               <button
                 type="button"
-                onClick={() => { setEmail('viewer@demo.com'); setPassword('demo123'); }}
-                className="p-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={() => fillCredentials('viewer', 'viewer2024')}
+                className="w-full p-3 bg-gray-50 text-gray-700 rounded-xl hover:bg-gray-100 
+                           transition-colors flex items-center gap-3 text-left"
               >
-                Viewer
+                <div className="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="font-medium">Viewer</div>
+                  <div className="text-xs text-gray-500">{ROLE_DESCRIPTIONS.viewer}</div>
+                </div>
               </button>
             </div>
           </div>

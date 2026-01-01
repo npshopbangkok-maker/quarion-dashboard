@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import TopBar from '@/components/TopBar';
+import ProtectedPage from '@/components/ProtectedPage';
+import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Filter, Download, Trash2, Edit2 } from 'lucide-react';
-import { User, Transaction, TransactionType, Category } from '@/types/database';
+import { Transaction, TransactionType, Category } from '@/types/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import {
   fetchTransactions,
@@ -19,7 +21,6 @@ import {
   getTransactions,
   saveTransactions,
   getCategories,
-  initializeUser,
   generateId,
 } from '@/lib/storage';
 
@@ -44,7 +45,7 @@ function formatDate(dateString: string): string {
 
 export default function TransactionsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, logout } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,9 +60,6 @@ export default function TransactionsPage() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const loadedUser = initializeUser();
-        setUser(loadedUser);
-
         let loadedTransactions: Transaction[] = [];
         let loadedCategories: Category[] = [];
 
@@ -103,7 +101,10 @@ export default function TransactionsPage() {
     date: new Date().toISOString().split('T')[0],
   });
 
-  const handleLogout = () => router.push('/login');
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {
@@ -228,6 +229,7 @@ export default function TransactionsPage() {
   };
 
   return (
+    <ProtectedPage requiredPage="transactions">
     <div className="min-h-screen bg-gray-50">
       <Sidebar user={user} onLogout={handleLogout} />
       <MobileNav user={user} onLogout={handleLogout} />
@@ -532,5 +534,6 @@ export default function TransactionsPage() {
         </div>
       )}
     </div>
+    </ProtectedPage>
   );
 }

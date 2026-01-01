@@ -8,8 +8,9 @@ import TopBar from '@/components/TopBar';
 import DashboardCards from '@/components/DashboardCards';
 import { IncomeExpenseChart, CategoryDonutChart } from '@/components/Charts';
 import TransactionsTable from '@/components/TransactionsTable';
+import ProtectedPage from '@/components/ProtectedPage';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
-  User, 
   Transaction, 
   DashboardSummary, 
   MonthlyData, 
@@ -24,7 +25,6 @@ import {
 } from '@/lib/database';
 import {
   getTransactions as getLocalTransactions,
-  initializeUser,
   calculateSummary as localCalculateSummary,
   calculateMonthlyData as localCalculateMonthlyData,
   calculateCategoryData as localCalculateCategoryData,
@@ -32,7 +32,7 @@ import {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, logout } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<DashboardSummary>({
     currentMonthIncome: 0,
@@ -48,9 +48,6 @@ export default function DashboardPage() {
   // Load data on mount
   useEffect(() => {
     const loadData = async () => {
-      const loadedUser = initializeUser();
-      setUser(loadedUser);
-
       let loadedTransactions: Transaction[];
 
       // Try Supabase first, fallback to localStorage
@@ -79,6 +76,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleLogout = () => {
+    logout();
     router.push('/login');
   };
 
@@ -89,6 +87,7 @@ export default function DashboardPage() {
   );
 
   return (
+    <ProtectedPage requiredPage="dashboard">
     <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
       <Sidebar user={user} onLogout={handleLogout} />
@@ -139,5 +138,6 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
+    </ProtectedPage>
   );
 }

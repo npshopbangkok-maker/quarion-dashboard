@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import TopBar from '@/components/TopBar';
+import ProtectedPage from '@/components/ProtectedPage';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Download, 
   FileText, 
@@ -15,7 +17,7 @@ import {
   DollarSign,
   Filter
 } from 'lucide-react';
-import { User, MonthlyData, CategoryData } from '@/types/database';
+import { MonthlyData, CategoryData } from '@/types/database';
 import { IncomeExpenseChart, CategoryDonutChart } from '@/components/Charts';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import {
@@ -25,7 +27,6 @@ import {
 } from '@/lib/database';
 import {
   getTransactions,
-  initializeUser,
   calculateMonthlyData,
   calculateCategoryData,
 } from '@/lib/storage';
@@ -41,7 +42,7 @@ function formatCurrency(amount: number): string {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, logout } = useAuth();
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,9 +58,6 @@ export default function ReportsPage() {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const loadedUser = initializeUser();
-        setUser(loadedUser);
-
         let loadedMonthlyData: MonthlyData[] = [];
         let loadedCategoryData: CategoryData[] = [];
 
@@ -93,7 +91,10 @@ export default function ReportsPage() {
     loadData();
   }, []);
 
-  const handleLogout = () => router.push('/login');
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   // Calculate totals
   const totalIncome = monthlyData.reduce((sum, m) => sum + m.income, 0);
@@ -118,6 +119,7 @@ export default function ReportsPage() {
   };
 
   return (
+    <ProtectedPage requiredPage="reports">
     <div className="min-h-screen bg-gray-50">
       <Sidebar user={user} onLogout={handleLogout} />
       <MobileNav user={user} onLogout={handleLogout} />
@@ -310,5 +312,6 @@ export default function ReportsPage() {
         </div>
       </main>
     </div>
+    </ProtectedPage>
   );
 }

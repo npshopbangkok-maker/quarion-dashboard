@@ -1,88 +1,112 @@
-import { supabase } from './supabase';
-import { User, UserRole, ROLE_PERMISSIONS, RolePermissions } from '@/types/database';
+// Simple Internal Auth System
+// กำหนด users และ passwords ได้เอง
 
-// Check if Supabase is configured
-const isSupabaseConfigured = (): boolean => {
-  return supabase !== null;
+export type UserRole = 'owner' | 'admin' | 'viewer';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+// ========================================
+// กำหนด Users ที่นี่! แก้ไขได้ตามต้องการ
+// ========================================
+const USERS: { [username: string]: { password: string; user: User } } = {
+  // Owner - เข้าถึงได้ทุกอย่าง, จัดการผู้ใช้, export reports
+  'owner': {
+    password: 'quarion2024',
+    user: {
+      id: '1',
+      name: 'Owner',
+      email: 'owner@quarion.com',
+      role: 'owner'
+    }
+  },
+  // Admin - เพิ่ม/แก้ไข transactions, upload slips
+  'admin': {
+    password: 'admin2024',
+    user: {
+      id: '2',
+      name: 'Admin',
+      email: 'admin@quarion.com',
+      role: 'admin'
+    }
+  },
+  // Viewer - ดู dashboard อย่างเดียว
+  'viewer': {
+    password: 'viewer2024',
+    user: {
+      id: '3',
+      name: 'Viewer',
+      email: 'viewer@quarion.com',
+      role: 'viewer'
+    }
+  }
 };
 
-// Get current authenticated user
-export async function getCurrentUser(): Promise<User | null> {
-  if (!isSupabaseConfigured() || !supabase) return null;
-  
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  
-  if (!authUser) return null;
+// ========================================
+// Auth Functions
+// ========================================
 
-  // Fetch user profile from database
-  const { data: userProfile, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', authUser.id)
-    .single();
-
-  if (error || !userProfile) {
-    console.error('Error fetching user profile:', error);
-    return null;
+export function authenticate(username: string, password: string): User | null {
+  const userEntry = USERS[username.toLowerCase()];
+  if (userEntry && userEntry.password === password) {
+    return userEntry.user;
   }
-
-  return userProfile as User;
+  return null;
 }
 
-// Sign in with email and password
-export async function signIn(email: string, password: string): Promise<{ user: User | null; error: string | null }> {
-  if (!isSupabaseConfigured() || !supabase) {
-    return { user: null, error: 'Supabase is not configured' };
+export function getAllUsers(): User[] {
+  return Object.values(USERS).map(entry => entry.user);
+}
+
+// ========================================
+// Role Permissions
+// ========================================
+
+export const PERMISSIONS = {
+  // หน้าที่แต่ละ role เข้าได้
+  pages: {
+    dashboard: ['owner', 'admin', 'viewer'] as UserRole[],
+    transactions: ['owner', 'admin', 'viewer'] as UserRole[],
+    upload: ['owner', 'admin'] as UserRole[],
+    reports: ['owner', 'admin'] as UserRole[],
+    settings: ['owner'] as UserRole[],
+    users: ['owner'] as UserRole[]
+  },
+  // actions ที่แต่ละ role ทำได้
+  actions: {
+    viewDashboard: ['owner', 'admin', 'viewer'] as UserRole[],
+    viewTransactions: ['owner', 'admin', 'viewer'] as UserRole[],
+    addTransaction: ['owner', 'admin'] as UserRole[],
+    editTransaction: ['owner', 'admin'] as UserRole[],
+    deleteTransaction: ['owner'] as UserRole[],
+    uploadSlip: ['owner', 'admin'] as UserRole[],
+    exportReports: ['owner', 'admin'] as UserRole[],
+    manageUsers: ['owner'] as UserRole[],
+    manageSettings: ['owner'] as UserRole[]
   }
+};
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return { user: null, error: error.message };
-  }
-
-  if (data.user) {
-    const user = await getCurrentUser();
-    return { user, error: null };
-  }
-
-  return { user: null, error: 'Unknown error occurred' };
+export function canAccessPage(role: UserRole, page: keyof typeof PERMISSIONS.pages): boolean {
+  return PERMISSIONS.pages[page].includes(role);
 }
 
-// Sign out
-export async function signOut(): Promise<void> {
-  if (!isSupabaseConfigured() || !supabase) return;
-  await supabase.auth.signOut();
+export function canPerformAction(role: UserRole, action: keyof typeof PERMISSIONS.actions): boolean {
+  return PERMISSIONS.actions[action].includes(role);
 }
 
-// Check if user has specific permission
-export function hasPermission(role: UserRole, permission: keyof RolePermissions): boolean {
-  return ROLE_PERMISSIONS[role][permission];
-}
+// Role labels ภาษาไทย
+export const ROLE_LABELS: Record<UserRole, string> = {
+  owner: 'เจ้าของ',
+  admin: 'ผู้ดูแล',
+  viewer: 'ผู้ชม'
+};
 
-// Get all permissions for a role
-export function getRolePermissions(role: UserRole): RolePermissions {
-  return ROLE_PERMISSIONS[role];
-}
-
-// Subscribe to auth state changes
-export function onAuthStateChange(callback: (user: User | null) => void) {
-  if (!isSupabaseConfigured() || !supabase) {
-    return { data: { subscription: { unsubscribe: () => {} } } };
-  }
-  
-  return supabase.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
-      const user = await getCurrentUser();
-      callback(user);
-    } else {
-      callback(null);
-    }
-  });
-}
-
-// Re-export for convenience
-export type { User };
+export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  owner: 'เข้าถึงได้ทุกอย่าง, จัดการผู้ใช้, export reports',
+  admin: 'เพิ่ม/แก้ไข transactions, upload slips',
+  viewer: 'ดู dashboard อย่างเดียว'
+};

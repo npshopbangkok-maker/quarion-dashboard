@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import TopBar from '@/components/TopBar';
+import ProtectedPage from '@/components/ProtectedPage';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Upload, 
   FileImage, 
@@ -16,10 +18,10 @@ import {
   Scan,
   Sparkles
 } from 'lucide-react';
-import { User, Category, TransactionType } from '@/types/database';
+import { Category, TransactionType } from '@/types/database';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { createTransaction, fetchCategories } from '@/lib/database';
-import { getCategories, saveTransactions, getTransactions, initializeUser, generateId } from '@/lib/storage';
+import { getCategories, saveTransactions, getTransactions, generateId } from '@/lib/storage';
 
 type UploadStatus = 'idle' | 'scanning' | 'scanned' | 'uploading' | 'success' | 'error';
 
@@ -39,7 +41,7 @@ interface OcrResult {
 
 export default function UploadPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, logout } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -64,9 +66,6 @@ export default function UploadPage() {
   // Load user and categories
   useEffect(() => {
     const loadData = async () => {
-      const loadedUser = initializeUser();
-      setUser(loadedUser);
-
       let loadedCategories: Category[] = [];
       if (isSupabaseConfigured()) {
         loadedCategories = await fetchCategories();
@@ -79,7 +78,10 @@ export default function UploadPage() {
     loadData();
   }, []);
 
-  const handleLogout = () => router.push('/login');
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   // Handle file selection and OCR with OpenAI Vision
   const handleFileSelect = useCallback(async (file: File) => {
@@ -262,6 +264,7 @@ export default function UploadPage() {
   };
 
   return (
+    <ProtectedPage requiredPage="upload">
     <div className="min-h-screen bg-gray-50">
       <Sidebar user={user} onLogout={handleLogout} />
       <MobileNav user={user} onLogout={handleLogout} />
@@ -606,5 +609,6 @@ export default function UploadPage() {
         </div>
       </main>
     </div>
+    </ProtectedPage>
   );
 }

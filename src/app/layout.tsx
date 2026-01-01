@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "Quarion Dashboard - ระบบจัดการรายรับ-รายจ่าย",
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className="antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

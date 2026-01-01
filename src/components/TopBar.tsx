@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, Bell, ChevronDown } from 'lucide-react';
-import { User } from '@/types/database';
+import { User, ROLE_LABELS } from '@/lib/auth';
 
 interface TopBarProps {
   user: User | null;
@@ -48,7 +48,7 @@ export default function TopBar({ user, searchQuery = '', onSearchChange }: TopBa
             </div>
             <div className="hidden md:block text-left">
               <p className="text-sm font-medium text-gray-700">{user?.name || 'User'}</p>
-              <p className="text-xs text-gray-400 capitalize">{user?.role || 'viewer'}</p>
+              <p className="text-xs text-gray-400">{user?.role ? ROLE_LABELS[user.role] : 'ผู้ชม'}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
           </button>

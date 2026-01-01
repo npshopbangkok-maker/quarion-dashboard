@@ -14,16 +14,11 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { User, UserRole, ROLE_PERMISSIONS, RolePermissions } from '@/types/database';
+import { canAccessPage, PERMISSIONS, User } from '@/lib/auth';
 
 interface MobileNavProps {
   user: User | null;
   onLogout: () => void;
-}
-
-// Helper function to check permission
-function hasPermission(role: UserRole, permission: keyof RolePermissions): boolean {
-  return ROLE_PERMISSIONS[role][permission];
 }
 
 // Menu items configuration
@@ -32,37 +27,37 @@ const menuItems = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: LayoutDashboard,
-    permission: 'canViewDashboard' as const,
+    page: 'dashboard' as keyof typeof PERMISSIONS.pages,
   },
   {
     name: 'Transactions',
     href: '/transactions',
     icon: Receipt,
-    permission: 'canManageTransactions' as const,
+    page: 'transactions' as keyof typeof PERMISSIONS.pages,
   },
   {
     name: 'Upload Slip',
     href: '/upload',
     icon: Upload,
-    permission: 'canUploadSlip' as const,
+    page: 'upload' as keyof typeof PERMISSIONS.pages,
   },
   {
     name: 'Reports',
     href: '/reports',
     icon: FileText,
-    permission: 'canViewReports' as const,
+    page: 'reports' as keyof typeof PERMISSIONS.pages,
   },
   {
     name: 'Users',
     href: '/users',
     icon: Users,
-    permission: 'canManageUsers' as const,
+    page: 'users' as keyof typeof PERMISSIONS.pages,
   },
   {
     name: 'Settings',
     href: '/settings',
     icon: Settings,
-    permission: 'canViewDashboard' as const,
+    page: 'settings' as keyof typeof PERMISSIONS.pages,
   },
 ];
 
@@ -73,7 +68,7 @@ export default function MobileNav({ user, onLogout }: MobileNavProps) {
   // Filter menu items based on user role
   const visibleMenuItems = menuItems.filter((item) => {
     if (!user) return false;
-    return hasPermission(user.role, item.permission);
+    return canAccessPage(user.role, item.page);
   });
 
   return (

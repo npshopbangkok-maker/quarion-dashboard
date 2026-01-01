@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import TopBar from '@/components/TopBar';
+import ProtectedPage from '@/components/ProtectedPage';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   User as UserIcon, 
   Bell, 
@@ -15,19 +17,10 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { User } from '@/types/database';
-
-// Mock Data
-const mockUser: User = {
-  id: '1',
-  name: 'สมชาย ใจดี',
-  email: 'owner@demo.com',
-  role: 'owner',
-};
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [user] = useState<User>(mockUser);
+  const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
@@ -35,8 +28,8 @@ export default function SettingsPage() {
 
   // Profile form
   const [profileForm, setProfileForm] = useState({
-    name: mockUser.name,
-    email: mockUser.email,
+    name: user?.name || '',
+    email: user?.email || '',
   });
 
   // Password form
@@ -54,7 +47,10 @@ export default function SettingsPage() {
     monthlyReport: true,
   });
 
-  const handleLogout = () => router.push('/login');
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -84,6 +80,7 @@ export default function SettingsPage() {
   ];
 
   return (
+    <ProtectedPage requiredPage="settings">
     <div className="min-h-screen bg-gray-50">
       <Sidebar user={user} onLogout={handleLogout} />
       <MobileNav user={user} onLogout={handleLogout} />
@@ -170,7 +167,7 @@ export default function SettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">สิทธิ์</label>
                       <input
                         type="text"
-                        value={user.role.toUpperCase()}
+                        value={user?.role?.toUpperCase() || 'VIEWER'}
                         disabled
                         className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl
                                    text-gray-500 cursor-not-allowed"
@@ -358,5 +355,6 @@ export default function SettingsPage() {
         </div>
       </main>
     </div>
+    </ProtectedPage>
   );
 }

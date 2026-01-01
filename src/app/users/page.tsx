@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import TopBar from '@/components/TopBar';
+import ProtectedPage from '@/components/ProtectedPage';
+import { useAuth } from '@/contexts/AuthContext';
+import { getAllUsers, ROLE_DESCRIPTIONS, User, UserRole } from '@/lib/auth';
 import { 
   Plus, 
   Edit2, 
@@ -13,56 +16,38 @@ import {
   ShieldCheck, 
   Eye,
   Search,
-  UserPlus
+  UserPlus,
+  Users
 } from 'lucide-react';
-import { User, UserRole } from '@/types/database';
-
-// Default User
-const mockUser: User = {
-  id: '1',
-  name: 'ผู้ใช้งาน',
-  email: 'user@demo.com',
-  role: 'owner',
-};
-
-// Initial user (just current user)
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'ผู้ใช้งาน',
-    email: 'user@demo.com',
-    role: 'owner',
-  },
-];
 
 const roleConfig = {
   owner: {
     label: 'Owner',
     color: 'bg-purple-100 text-purple-700',
     icon: ShieldCheck,
-    description: 'สิทธิ์เต็ม - จัดการทุกอย่าง',
+    description: ROLE_DESCRIPTIONS.owner,
   },
   admin: {
     label: 'Admin',
     color: 'bg-blue-100 text-blue-700',
     icon: Shield,
-    description: 'จัดการรายการ และอัปโหลดสลิป',
+    description: ROLE_DESCRIPTIONS.admin,
   },
   viewer: {
     label: 'Viewer',
     color: 'bg-gray-100 text-gray-700',
     icon: Eye,
-    description: 'ดู Dashboard เท่านั้น',
+    description: ROLE_DESCRIPTIONS.viewer,
   },
 };
 
 export default function UsersPage() {
   const router = useRouter();
-  const [user] = useState<User>(mockUser);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const { user, logout } = useAuth();
+  const [users, setUsers] = useState(getAllUsers());
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<{ id: string; name: string; email: string; role: UserRole } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -72,7 +57,10 @@ export default function UsersPage() {
     password: '',
   });
 
-  const handleLogout = () => router.push('/login');
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   // Filter users
   const filteredUsers = users.filter((u) =>
@@ -94,7 +82,7 @@ export default function UsersPage() {
       );
     } else {
       // Create new user
-      const newUser: User = {
+      const newUser = {
         id: Date.now().toString(),
         name: formData.name,
         email: formData.email,
@@ -129,7 +117,7 @@ export default function UsersPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (id === user.id) {
+    if (id === user?.id) {
       alert('ไม่สามารถลบบัญชีตัวเองได้');
       return;
     }
@@ -139,6 +127,7 @@ export default function UsersPage() {
   };
 
   return (
+    <ProtectedPage requiredPage="users">
     <div className="min-h-screen bg-gray-50">
       <Sidebar user={user} onLogout={handleLogout} />
       <MobileNav user={user} onLogout={handleLogout} />
@@ -201,7 +190,7 @@ export default function UsersPage() {
                       <div>
                         <p className="font-medium text-gray-700">
                           {userItem.name}
-                          {userItem.id === user.id && <span className="text-xs text-purple-500 ml-1">(คุณ)</span>}
+                          {userItem.id === user?.id && <span className="text-xs text-purple-500 ml-1">(คุณ)</span>}
                         </p>
                         <p className="text-sm text-gray-500">{userItem.email}</p>
                       </div>
@@ -215,7 +204,7 @@ export default function UsersPage() {
                     <button onClick={() => handleEdit(userItem)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    {userItem.id !== user.id && (
+                    {userItem.id !== user?.id && (
                       <button onClick={() => handleDelete(userItem.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -265,7 +254,7 @@ export default function UsersPage() {
                               </div>
                               <div>
                                 <p className="font-medium text-gray-700">{userItem.name}</p>
-                                {userItem.id === user.id && (
+                                {userItem.id === user?.id && (
                                   <span className="text-xs text-purple-500">(คุณ)</span>
                                 )}
                               </div>
@@ -290,7 +279,7 @@ export default function UsersPage() {
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-                              {userItem.id !== user.id && (
+                              {userItem.id !== user?.id && (
                                 <button
                                   onClick={() => handleDelete(userItem.id)}
                                   className="p-2 text-gray-400 hover:text-red-500 
@@ -383,7 +372,7 @@ export default function UsersPage() {
                   {(Object.keys(roleConfig) as UserRole[]).map((role) => {
                     const config = roleConfig[role];
                     const Icon = config.icon;
-                    const isDisabled = editingUser?.id === user.id && role !== 'owner';
+                    const isDisabled = editingUser?.id === user?.id && role !== 'owner';
 
                     return (
                       <label
@@ -443,5 +432,6 @@ export default function UsersPage() {
         </div>
       )}
     </div>
+    </ProtectedPage>
   );
 }
