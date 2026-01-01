@@ -128,7 +128,22 @@ export default function UploadPage() {
             setFormData(prev => ({ ...prev, amount: result.data.amount.toString() }));
           }
           if (result.data.date) {
-            setFormData(prev => ({ ...prev, date: result.data.date }));
+            // Validate and convert date format
+            let dateValue = result.data.date;
+            
+            // Check if it's a valid YYYY-MM-DD format
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (dateRegex.test(dateValue)) {
+              // Check if year is in Buddhist Era (พ.ศ.) and convert to CE
+              const year = parseInt(dateValue.substring(0, 4));
+              if (year > 2500) {
+                // Convert พ.ศ. to ค.ศ.
+                const ceYear = year - 543;
+                dateValue = `${ceYear}${dateValue.substring(4)}`;
+              }
+              setFormData(prev => ({ ...prev, date: dateValue }));
+            }
+            // If format is wrong, don't auto-fill (user can input manually)
           }
           if (result.data.bankName) {
             setFormData(prev => ({ 
