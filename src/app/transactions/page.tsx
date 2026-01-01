@@ -7,6 +7,14 @@ import MobileNav from '@/components/MobileNav';
 import TopBar, { MobileSearchBar } from '@/components/TopBar';
 import { Plus, Filter, Download, Trash2, Edit2 } from 'lucide-react';
 import { User, Transaction, TransactionType, Category } from '@/types/database';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import {
+  fetchTransactions,
+  createTransaction as dbCreateTransaction,
+  updateTransaction as dbUpdateTransaction,
+  deleteTransaction as dbDeleteTransaction,
+  fetchCategories,
+} from '@/lib/database';
 import {
   getTransactions,
   saveTransactions,
@@ -44,12 +52,46 @@ export default function TransactionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
-  // Load data from localStorage
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load data from Supabase or localStorage
   useEffect(() => {
-    const loadedUser = initializeUser();
-    setUser(loadedUser);
-    setTransactions(getTransactions());
-    setCategories(getCategories());
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const loadedUser = initializeUser();
+        setUser(loadedUser);
+
+        let loadedTransactions: Transaction[] = [];
+        let loadedCategories: Category[] = [];
+
+        if (isSupabaseConfigured()) {
+          // Try Supabase first
+          loadedTransactions = await fetchTransactions();
+          loadedCategories = await fetchCategories();
+        }
+
+        // Fallback to localStorage if Supabase not configured or returns empty
+        if (loadedTransactions.length === 0) {
+          loadedTransactions = getTransactions();
+        }
+        if (loadedCategories.length === 0) {
+          loadedCategories = getCategories();
+        }
+
+        setTransactions(loadedTransactions);
+        setCategories(loadedCategories);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // Fallback to localStorage on error
+        setTransactions(getTransactions());
+        setCategories(getCategories());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   // Form state
@@ -75,12 +117,11 @@ export default function TransactionsPage() {
   // Categories based on selected type
   const availableCategories = categories.filter(c => c.type === formData.type);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
-    const newTransaction: Transaction = {
-      id: editingTransaction?.id || generateId(),
+    const transactionData = {
       type: formData.type,
       amount: parseFloat(formData.amount),
       category: formData.category,
@@ -88,21 +129,57 @@ export default function TransactionsPage() {
       date: formData.date,
       created_by: user.id,
       slip_url: null,
-      created_at: editingTransaction?.created_at || new Date().toISOString(),
-      user: user,
     };
 
-    let updatedTransactions: Transaction[];
-    if (editingTransaction) {
-      updatedTransactions = transactions.map(t => 
-        t.id === editingTransaction.id ? newTransaction : t
-      );
-    } else {
-      updatedTransactions = [newTransaction, ...transactions];
+    try {
+      if (isSupabaseConfigured()) {
+        if (editingTransaction) {
+          // Update existing transaction in Supabase
+          const updated = await dbUpdateTransaction(editingTransaction.id, transactionData);
+          if (updated) {
+            setTransactions(transactions.map(t => 
+              t.id === editingTransaction.id ? updated : t
+            ));
+          }
+        } else {
+          // Create new transaction in Supabase
+          const created = await dbCreateTransaction(transactionData);
+          if (created) {
+            setTransactions([created, ...transactions]);
+          }
+        }
+      } else {
+        // Fallback to localStorage
+        const newTransaction: Transaction = {
+          id: editingTransaction?.id || generateId(),
+          type: formData.type,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          description: formData.description,
+          date: formData.date,
+          created_by: user.id,
+          slip_url: null,
+          created_at: editingTransaction?.created_at || new Date().toISOString(),
+          user: user,
+        };
+
+        let updatedTransactions: Transaction[];
+        if (editingTransaction) {
+          updatedTransactions = transactions.map(t => 
+            t.id === editingTransaction.id ? newTransaction : t
+          );
+        } else {
+          updatedTransactions = [newTransaction, ...transactions];
+        }
+
+        setTransactions(updatedTransactions);
+        saveTransactions(updatedTransactions);
+      }
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึก');
     }
 
-    setTransactions(updatedTransactions);
-    saveTransactions(updatedTransactions);
     resetForm();
   };
 
@@ -130,11 +207,23 @@ export default function TransactionsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
-      const updatedTransactions = transactions.filter(t => t.id !== id);
-      setTransactions(updatedTransactions);
-      saveTransactions(updatedTransactions);
+      try {
+        if (isSupabaseConfigured()) {
+          const success = await dbDeleteTransaction(id);
+          if (success) {
+            setTransactions(transactions.filter(t => t.id !== id));
+          }
+        } else {
+          const updatedTransactions = transactions.filter(t => t.id !== id);
+          setTransactions(updatedTransactions);
+          saveTransactions(updatedTransactions);
+        }
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        alert('เกิดข้อผิดพลาดในการลบ');
+      }
     }
   };
 

@@ -15,12 +15,19 @@ import {
   MonthlyData, 
   CategoryData 
 } from '@/types/database';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import {
-  getTransactions,
-  initializeUser,
+  fetchTransactions,
   calculateSummary,
   calculateMonthlyData,
   calculateCategoryData,
+} from '@/lib/database';
+import {
+  getTransactions as getLocalTransactions,
+  initializeUser,
+  calculateSummary as localCalculateSummary,
+  calculateMonthlyData as localCalculateMonthlyData,
+  calculateCategoryData as localCalculateCategoryData,
 } from '@/lib/storage';
 
 export default function DashboardPage() {
@@ -38,18 +45,37 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Load data from localStorage on mount
+  // Load data on mount
   useEffect(() => {
-    const loadedUser = initializeUser();
-    setUser(loadedUser);
+    const loadData = async () => {
+      const loadedUser = initializeUser();
+      setUser(loadedUser);
 
-    const loadedTransactions = getTransactions();
-    setTransactions(loadedTransactions);
-    setSummary(calculateSummary(loadedTransactions));
-    setMonthlyData(calculateMonthlyData(loadedTransactions));
-    setCategoryData(calculateCategoryData(loadedTransactions));
+      let loadedTransactions: Transaction[];
 
-    setIsLoading(false);
+      // Try Supabase first, fallback to localStorage
+      if (isSupabaseConfigured()) {
+        loadedTransactions = await fetchTransactions();
+        // If Supabase returns empty but we have local data, use local
+        if (loadedTransactions.length === 0) {
+          const localData = getLocalTransactions();
+          if (localData.length > 0) {
+            loadedTransactions = localData;
+          }
+        }
+      } else {
+        loadedTransactions = getLocalTransactions();
+      }
+
+      setTransactions(loadedTransactions);
+      setSummary(calculateSummary(loadedTransactions));
+      setMonthlyData(calculateMonthlyData(loadedTransactions));
+      setCategoryData(calculateCategoryData(loadedTransactions));
+
+      setIsLoading(false);
+    };
+
+    loadData();
   }, []);
 
   const handleLogout = () => {

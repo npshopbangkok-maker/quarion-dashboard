@@ -17,6 +17,12 @@ import {
 } from 'lucide-react';
 import { User, MonthlyData, CategoryData } from '@/types/database';
 import { IncomeExpenseChart, CategoryDonutChart } from '@/components/Charts';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import {
+  fetchTransactions,
+  calculateMonthlyData as dbCalculateMonthlyData,
+  calculateCategoryData as dbCalculateCategoryData,
+} from '@/lib/database';
 import {
   getTransactions,
   initializeUser,
@@ -44,15 +50,47 @@ export default function ReportsPage() {
     end: new Date().getFullYear() + '-12-31',
   });
   const [isExporting, setIsExporting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from localStorage
+  // Load data from Supabase or localStorage
   useEffect(() => {
-    const loadedUser = initializeUser();
-    setUser(loadedUser);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const loadedUser = initializeUser();
+        setUser(loadedUser);
 
-    const transactions = getTransactions();
-    setMonthlyData(calculateMonthlyData(transactions));
-    setCategoryData(calculateCategoryData(transactions));
+        let loadedMonthlyData: MonthlyData[] = [];
+        let loadedCategoryData: CategoryData[] = [];
+
+        if (isSupabaseConfigured()) {
+          const transactions = await fetchTransactions();
+          if (transactions.length > 0) {
+            loadedMonthlyData = dbCalculateMonthlyData(transactions);
+            loadedCategoryData = dbCalculateCategoryData(transactions);
+          }
+        }
+
+        // Fallback to localStorage
+        if (loadedMonthlyData.length === 0) {
+          const localTransactions = getTransactions();
+          loadedMonthlyData = calculateMonthlyData(localTransactions);
+          loadedCategoryData = calculateCategoryData(localTransactions);
+        }
+
+        setMonthlyData(loadedMonthlyData);
+        setCategoryData(loadedCategoryData);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        const localTransactions = getTransactions();
+        setMonthlyData(calculateMonthlyData(localTransactions));
+        setCategoryData(calculateCategoryData(localTransactions));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const handleLogout = () => router.push('/login');
