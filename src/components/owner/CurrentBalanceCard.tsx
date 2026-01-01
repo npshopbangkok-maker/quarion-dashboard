@@ -103,10 +103,10 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
 
   return (
     <div className="bg-white rounded-xl shadow-sm border p-3 lg:p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Wallet className="w-5 h-5 text-blue-500" />
-          <h3 className="font-semibold text-gray-800">ยอดเงินในบัญชี</h3>
+          <h3 className="text-sm lg:text-base font-semibold text-gray-800">ยอดเงินปัจจุบัน</h3>
         </div>
         {!isEditing && (
           <button

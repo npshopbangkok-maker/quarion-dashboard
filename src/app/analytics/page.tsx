@@ -106,7 +106,7 @@ export default function AnalyticsPage() {
             ) : (
               <>
                 {/* Row 1: Current Balance + Quick Snapshot + Progress Tracker + Saving Goal */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
                   <CurrentBalanceCard transactions={transactions} user={user} />
                   <QuickSnapshot transactions={transactions} user={user} />
                   <MonthlyProgressTracker transactions={transactions} user={user} />
@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Row 2: Flow Signal + Monthly Insight */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
                   <FlowSignalHeatmap transactions={transactions} user={user} />
                   <MonthlyInsightChart transactions={transactions} user={user} />
                 </div>
@@ -129,7 +129,7 @@ export default function AnalyticsPage() {
                 <AICFOAdvisor transactions={transactions} user={user} />
 
                 {/* Row 6: Admin Activity + Yearly Overview */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
                   <RecentAdminActivity transactions={transactions} user={user} />
                   <YearlyOverviewDashboard transactions={transactions} user={user} />
                 </div>

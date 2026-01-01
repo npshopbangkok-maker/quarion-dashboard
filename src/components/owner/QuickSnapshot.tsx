@@ -109,13 +109,13 @@ export default function QuickSnapshot({ transactions, user }: QuickSnapshotProps
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-800">
-          ⚡ Quick Snapshot
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base lg:text-lg font-bold text-gray-800">
+          ⚡ Snapshot
         </h3>
         <div className="flex items-center gap-1 text-xs text-gray-400">
           <Clock className="w-3 h-3" />
-          <span>อัพเดท: {formatDate(snapshot.lastUpdate)}</span>
+          <span>{formatDate(snapshot.lastUpdate)}</span>
         </div>
       </div>
 
@@ -125,41 +125,47 @@ export default function QuickSnapshot({ transactions, user }: QuickSnapshotProps
           <p>ยังไม่มีข้อมูลวันนี้</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-2">
           {/* Income */}
-          <div className="bg-green-50 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-green-600 mb-2">
+          <div className="bg-green-50 rounded-xl p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-green-600">
               <Wallet className="w-4 h-4" />
               <span className="text-sm font-medium">ยอดขาย</span>
             </div>
-            <div className="text-xl font-bold text-green-700">
-              ฿{snapshot.todayIncome.toLocaleString()}
+            <div className="text-right">
+              <div className="text-lg font-bold text-green-700">
+                ฿{snapshot.todayIncome.toLocaleString()}
+              </div>
+              <ChangeIndicator value={snapshot.incomeChange} />
             </div>
-            <ChangeIndicator value={snapshot.incomeChange} />
           </div>
 
           {/* Expense */}
-          <div className="bg-red-50 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-red-600 mb-2">
+          <div className="bg-red-50 rounded-xl p-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-red-600">
               <Receipt className="w-4 h-4" />
               <span className="text-sm font-medium">รายจ่าย</span>
             </div>
-            <div className="text-xl font-bold text-red-700">
-              ฿{snapshot.todayExpense.toLocaleString()}
+            <div className="text-right">
+              <div className="text-lg font-bold text-red-700">
+                ฿{snapshot.todayExpense.toLocaleString()}
+              </div>
+              <span className="text-gray-400 text-xs">-</span>
             </div>
-            <span className="text-gray-400 text-sm">-</span>
           </div>
 
           {/* Profit */}
-          <div className={`rounded-xl p-4 ${snapshot.todayProfit >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
-            <div className={`flex items-center gap-2 mb-2 ${snapshot.todayProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+          <div className={`rounded-xl p-3 flex items-center justify-between ${snapshot.todayProfit >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
+            <div className={`flex items-center gap-2 ${snapshot.todayProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
               <DollarSign className="w-4 h-4" />
               <span className="text-sm font-medium">กำไร</span>
             </div>
-            <div className={`text-xl font-bold ${snapshot.todayProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-              {snapshot.todayProfit >= 0 ? '+' : ''}฿{snapshot.todayProfit.toLocaleString()}
+            <div className="text-right">
+              <div className={`text-lg font-bold ${snapshot.todayProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                {snapshot.todayProfit >= 0 ? '+' : ''}฿{snapshot.todayProfit.toLocaleString()}
+              </div>
+              <ChangeIndicator value={snapshot.profitChange} />
             </div>
-            <ChangeIndicator value={snapshot.profitChange} />
           </div>
         </div>
       )}

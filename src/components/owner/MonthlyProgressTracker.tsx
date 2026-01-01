@@ -104,19 +104,20 @@ export default function MonthlyProgressTracker({ transactions, user }: MonthlyPr
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-3 lg:p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base lg:text-lg font-bold text-gray-800 flex items-center gap-2">
           <Target className="w-5 h-5 text-purple-500" />
-          เป้าหมายกำไรเดือนนี้
+          <span className="hidden sm:inline">เป้าหมายกำไรเดือนนี้</span>
+          <span className="sm:hidden">เป้ากำไร</span>
         </h3>
         <button
           onClick={() => {
             setNewGoal(goalSettings.monthlyGoal.toString());
             setIsEditing(true);
           }}
-          className="text-sm text-purple-600 hover:text-purple-700"
+          className="text-xs lg:text-sm text-purple-600 hover:text-purple-700"
         >
-          แก้ไขเป้า
+          แก้ไข
         </button>
       </div>
 

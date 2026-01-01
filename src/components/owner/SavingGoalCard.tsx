@@ -104,10 +104,11 @@ export default function SavingGoalCard({ transactions, user }: SavingGoalCardPro
 
   return (
     <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-sm p-3 lg:p-6 text-white overflow-hidden">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base lg:text-lg font-bold flex items-center gap-2">
           <PiggyBank className="w-5 h-5" />
-          ออมเงินจากกำไร
+          <span className="hidden sm:inline">ออมจากกำไร</span>
+          <span className="sm:hidden">ออมเงิน</span>
         </h3>
         <button
           onClick={() => {
