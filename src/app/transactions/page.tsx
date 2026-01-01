@@ -7,30 +7,13 @@ import MobileNav from '@/components/MobileNav';
 import TopBar, { MobileSearchBar } from '@/components/TopBar';
 import { Plus, Filter, Download, Trash2, Edit2 } from 'lucide-react';
 import { User, Transaction, TransactionType, Category } from '@/types/database';
-
-// Default User
-const mockUser: User = {
-  id: '1',
-  name: 'ผู้ใช้งาน',
-  email: 'user@demo.com',
-  role: 'owner',
-};
-
-// Default Categories
-const mockCategories: Category[] = [
-  { id: '1', name: 'ขายสินค้า', type: 'income' },
-  { id: '2', name: 'บริการ', type: 'income' },
-  { id: '3', name: 'รายได้อื่นๆ', type: 'income' },
-  { id: '4', name: 'ค่าเช่า', type: 'expense' },
-  { id: '5', name: 'ค่าน้ำค่าไฟ', type: 'expense' },
-  { id: '6', name: 'เงินเดือน', type: 'expense' },
-  { id: '7', name: 'อุปกรณ์สำนักงาน', type: 'expense' },
-  { id: '8', name: 'การตลาด', type: 'expense' },
-  { id: '9', name: 'ค่าใช้จ่ายอื่นๆ', type: 'expense' },
-];
-
-// Empty initial transactions
-const mockTransactions: Transaction[] = [];
+import {
+  getTransactions,
+  saveTransactions,
+  getCategories,
+  initializeUser,
+  generateId,
+} from '@/lib/storage';
 
 // Format currency
 function formatCurrency(amount: number): string {
@@ -53,12 +36,21 @@ function formatDate(dateString: string): string {
 
 export default function TransactionsPage() {
   const router = useRouter();
-  const [user] = useState<User>(mockUser);
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const [user, setUser] = useState<User | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+
+  // Load data from localStorage
+  useEffect(() => {
+    const loadedUser = initializeUser();
+    setUser(loadedUser);
+    setTransactions(getTransactions());
+    setCategories(getCategories());
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -75,19 +67,20 @@ export default function TransactionsPage() {
   const filteredTransactions = transactions.filter((t) => {
     const matchesSearch = 
       t.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (t.description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || t.type === filterType;
     return matchesSearch && matchesType;
   });
 
   // Categories based on selected type
-  const availableCategories = mockCategories.filter(c => c.type === formData.type);
+  const availableCategories = categories.filter(c => c.type === formData.type);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     
     const newTransaction: Transaction = {
-      id: Date.now().toString(),
+      id: editingTransaction?.id || generateId(),
       type: formData.type,
       amount: parseFloat(formData.amount),
       category: formData.category,
@@ -95,18 +88,21 @@ export default function TransactionsPage() {
       date: formData.date,
       created_by: user.id,
       slip_url: null,
-      created_at: new Date().toISOString(),
+      created_at: editingTransaction?.created_at || new Date().toISOString(),
       user: user,
     };
 
+    let updatedTransactions: Transaction[];
     if (editingTransaction) {
-      setTransactions(prev => 
-        prev.map(t => t.id === editingTransaction.id ? { ...newTransaction, id: t.id } : t)
+      updatedTransactions = transactions.map(t => 
+        t.id === editingTransaction.id ? newTransaction : t
       );
     } else {
-      setTransactions(prev => [newTransaction, ...prev]);
+      updatedTransactions = [newTransaction, ...transactions];
     }
 
+    setTransactions(updatedTransactions);
+    saveTransactions(updatedTransactions);
     resetForm();
   };
 
@@ -128,7 +124,7 @@ export default function TransactionsPage() {
       type: transaction.type,
       amount: transaction.amount.toString(),
       category: transaction.category,
-      description: transaction.description,
+      description: transaction.description || '',
       date: transaction.date,
     });
     setIsModalOpen(true);
@@ -136,7 +132,9 @@ export default function TransactionsPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      const updatedTransactions = transactions.filter(t => t.id !== id);
+      setTransactions(updatedTransactions);
+      saveTransactions(updatedTransactions);
     }
   };
 

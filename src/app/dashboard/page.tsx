@@ -15,39 +15,41 @@ import {
   MonthlyData, 
   CategoryData 
 } from '@/types/database';
-
-// Default User
-const mockUser: User = {
-  id: '1',
-  name: 'ผู้ใช้งาน',
-  email: 'user@demo.com',
-  role: 'owner',
-};
-
-// Empty initial data
-const mockSummary: DashboardSummary = {
-  currentMonthIncome: 0,
-  currentMonthExpense: 0,
-  netProfit: 0,
-  totalTransactions: 0,
-};
-
-const mockMonthlyData: MonthlyData[] = [];
-
-const mockCategoryData: CategoryData[] = [];
-
-// Empty initial transactions
-const mockTransactions: Transaction[] = [];
+import {
+  getTransactions,
+  initializeUser,
+  calculateSummary,
+  calculateMonthlyData,
+  calculateCategoryData,
+} from '@/lib/storage';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(mockUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary>({
+    currentMonthIncome: 0,
+    currentMonthExpense: 0,
+    netProfit: 0,
+    totalTransactions: 0,
+  });
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Load data from localStorage on mount
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => setIsLoading(false), 500);
+    const loadedUser = initializeUser();
+    setUser(loadedUser);
+
+    const loadedTransactions = getTransactions();
+    setTransactions(loadedTransactions);
+    setSummary(calculateSummary(loadedTransactions));
+    setMonthlyData(calculateMonthlyData(loadedTransactions));
+    setCategoryData(calculateCategoryData(loadedTransactions));
+
+    setIsLoading(false);
   }, []);
 
   const handleLogout = () => {
@@ -55,9 +57,9 @@ export default function DashboardPage() {
   };
 
   // Filter transactions based on search
-  const filteredTransactions = mockTransactions.filter((t) =>
+  const filteredTransactions = transactions.filter((t) =>
     t.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.description.toLowerCase().includes(searchQuery.toLowerCase())
+    t.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -97,15 +99,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Summary Cards */}
-          <DashboardCards summary={mockSummary} isLoading={isLoading} />
+          <DashboardCards summary={summary} isLoading={isLoading} />
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
             <div className="xl:col-span-2">
-              <IncomeExpenseChart data={mockMonthlyData} isLoading={isLoading} />
+              <IncomeExpenseChart data={monthlyData} isLoading={isLoading} />
             </div>
             <div>
-              <CategoryDonutChart data={mockCategoryData} isLoading={isLoading} />
+              <CategoryDonutChart data={categoryData} isLoading={isLoading} />
             </div>
           </div>
 

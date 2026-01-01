@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
@@ -17,19 +17,12 @@ import {
 } from 'lucide-react';
 import { User, MonthlyData, CategoryData } from '@/types/database';
 import { IncomeExpenseChart, CategoryDonutChart } from '@/components/Charts';
-
-// Default User
-const mockUser: User = {
-  id: '1',
-  name: 'ผู้ใช้งาน',
-  email: 'user@demo.com',
-  role: 'owner',
-};
-
-// Empty initial data
-const mockMonthlyData: MonthlyData[] = [];
-
-const mockCategoryData: CategoryData[] = [];
+import {
+  getTransactions,
+  initializeUser,
+  calculateMonthlyData,
+  calculateCategoryData,
+} from '@/lib/storage';
 
 // Format currency
 function formatCurrency(amount: number): string {
@@ -42,19 +35,31 @@ function formatCurrency(amount: number): string {
 
 export default function ReportsPage() {
   const router = useRouter();
-  const [user] = useState<User>(mockUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState({
-    start: '2026-01-01',
-    end: '2026-12-31',
+    start: new Date().getFullYear() + '-01-01',
+    end: new Date().getFullYear() + '-12-31',
   });
   const [isExporting, setIsExporting] = useState(false);
+
+  // Load data from localStorage
+  useEffect(() => {
+    const loadedUser = initializeUser();
+    setUser(loadedUser);
+
+    const transactions = getTransactions();
+    setMonthlyData(calculateMonthlyData(transactions));
+    setCategoryData(calculateCategoryData(transactions));
+  }, []);
 
   const handleLogout = () => router.push('/login');
 
   // Calculate totals
-  const totalIncome = mockMonthlyData.reduce((sum, m) => sum + m.income, 0);
-  const totalExpense = mockMonthlyData.reduce((sum, m) => sum + m.expense, 0);
+  const totalIncome = monthlyData.reduce((sum, m) => sum + m.income, 0);
+  const totalExpense = monthlyData.reduce((sum, m) => sum + m.expense, 0);
   const netProfit = totalIncome - totalExpense;
 
   // Export functions
@@ -196,70 +201,74 @@ export default function ReportsPage() {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             <div className="lg:col-span-2">
-              <IncomeExpenseChart data={mockMonthlyData} />
+              <IncomeExpenseChart data={monthlyData} />
             </div>
             <div>
-              <CategoryDonutChart data={mockCategoryData} />
+              <CategoryDonutChart data={categoryData} />
             </div>
           </div>
 
           {/* Monthly Breakdown Table */}
           <div className="card">
             <h3 className="text-base lg:text-lg font-semibold text-gray-800 mb-4">สรุปรายเดือน</h3>
-            <div className="table-container overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    <th>เดือน</th>
-                    <th className="text-right">รายรับ</th>
-                    <th className="text-right">รายจ่าย</th>
-                    <th className="text-right">กำไร/ขาดทุน</th>
-                    <th className="text-right">%กำไร</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockMonthlyData.map((data) => {
-                    const profit = data.income - data.expense;
-                    const profitPercent = ((profit / data.income) * 100).toFixed(1);
-                    
-                    return (
-                      <tr key={data.month} className="hover:bg-gray-50">
-                        <td className="font-medium text-gray-700">{data.month}</td>
-                        <td className="text-right text-purple-600">{formatCurrency(data.income)}</td>
-                        <td className="text-right text-red-600">{formatCurrency(data.expense)}</td>
-                        <td className={`text-right font-semibold ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                          {profit >= 0 ? '+' : ''}{formatCurrency(profit)}
-                        </td>
-                        <td className="text-right">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium
-                            ${profit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}
-                          `}>
-                            {profit >= 0 ? '+' : ''}{profitPercent}%
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-gray-50 font-semibold">
-                    <td className="text-gray-800">รวมทั้งหมด</td>
-                    <td className="text-right text-purple-600">{formatCurrency(totalIncome)}</td>
-                    <td className="text-right text-red-600">{formatCurrency(totalExpense)}</td>
-                    <td className={`text-right ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {netProfit >= 0 ? '+' : ''}{formatCurrency(netProfit)}
-                    </td>
-                    <td className="text-right">
-                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium
-                        ${netProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}
-                      `}>
-                        {netProfit >= 0 ? '+' : ''}{((netProfit / totalIncome) * 100).toFixed(1)}%
-                      </span>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+            {monthlyData.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-sm">ยังไม่มีข้อมูล</div>
+            ) : (
+              <div className="table-container overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr>
+                      <th>เดือน</th>
+                      <th className="text-right">รายรับ</th>
+                      <th className="text-right">รายจ่าย</th>
+                      <th className="text-right">กำไร/ขาดทุน</th>
+                      <th className="text-right">%กำไร</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {monthlyData.map((data) => {
+                      const profit = data.income - data.expense;
+                      const profitPercent = data.income > 0 ? ((profit / data.income) * 100).toFixed(1) : '0.0';
+                      
+                      return (
+                        <tr key={data.month} className="hover:bg-gray-50">
+                          <td className="font-medium text-gray-700">{data.month}</td>
+                          <td className="text-right text-purple-600">{formatCurrency(data.income)}</td>
+                          <td className="text-right text-red-600">{formatCurrency(data.expense)}</td>
+                          <td className={`text-right font-semibold ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {profit >= 0 ? '+' : ''}{formatCurrency(profit)}
+                          </td>
+                          <td className="text-right">
+                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium
+                              ${profit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}
+                            `}>
+                              {profit >= 0 ? '+' : ''}{profitPercent}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-gray-50 font-semibold">
+                      <td className="text-gray-800">รวมทั้งหมด</td>
+                      <td className="text-right text-purple-600">{formatCurrency(totalIncome)}</td>
+                      <td className="text-right text-red-600">{formatCurrency(totalExpense)}</td>
+                      <td className={`text-right ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {netProfit >= 0 ? '+' : ''}{formatCurrency(netProfit)}
+                      </td>
+                      <td className="text-right">
+                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium
+                          ${netProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}
+                        `}>
+                          {netProfit >= 0 ? '+' : ''}{totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : '0.0'}%
+                        </span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </main>
