@@ -49,7 +49,7 @@ const USERS: { [username: string]: { password: string; user: User } } = {
     password: 'admin01',
     user: {
       id: '4',
-      name: 'Admin01',
+      name: 'Pukan',
       email: 'admin01@quarion.com',
       role: 'admin'
     }
@@ -59,7 +59,7 @@ const USERS: { [username: string]: { password: string; user: User } } = {
     password: 'admin02',
     user: {
       id: '5',
-      name: 'Admin02',
+      name: 'Gift',
       email: 'admin02@quarion.com',
       role: 'admin'
     }
