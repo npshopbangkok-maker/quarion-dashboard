@@ -9,6 +9,7 @@ import DashboardCards from '@/components/DashboardCards';
 import { IncomeExpenseChart, CategoryDonutChart } from '@/components/Charts';
 import TransactionsTable from '@/components/TransactionsTable';
 import ProtectedPage from '@/components/ProtectedPage';
+import PushNotificationManager from '@/components/PushNotificationManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Transaction, 
@@ -136,6 +137,9 @@ export default function DashboardPage() {
             isLoading={isLoading} 
           />
         </div>
+        
+        {/* Push Notification Prompt */}
+        <PushNotificationManager />
       </main>
     </div>
     </ProtectedPage>
