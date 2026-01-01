@@ -14,8 +14,18 @@ if (supabaseUrl && supabaseAnonKey) {
 
 export { supabase };
 
+// Check if Supabase is configured
+export function isSupabaseConfigured(): boolean {
+  return supabase !== null;
+}
+
 // Helper function to upload file to Supabase Storage
 export async function uploadSlip(file: File, transactionId: string): Promise<string | null> {
+  if (!supabase) {
+    console.warn('Supabase is not configured. Cannot upload slip.');
+    return null;
+  }
+
   const fileExt = file.name.split('.').pop();
   const fileName = `${transactionId}-${Date.now()}.${fileExt}`;
   const filePath = `slips/${fileName}`;
@@ -39,6 +49,11 @@ export async function uploadSlip(file: File, transactionId: string): Promise<str
 
 // Helper function to delete file from Supabase Storage
 export async function deleteSlip(slipUrl: string): Promise<boolean> {
+  if (!supabase) {
+    console.warn('Supabase is not configured. Cannot delete slip.');
+    return false;
+  }
+
   // Extract file path from URL
   const urlParts = slipUrl.split('/');
   const filePath = `slips/${urlParts[urlParts.length - 1]}`;
