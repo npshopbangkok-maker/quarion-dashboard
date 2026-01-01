@@ -104,6 +104,7 @@ export const PERMISSIONS = {
     upload: ['owner', 'admin'] as UserRole[],
     reports: ['owner', 'admin'] as UserRole[],
     calendar: ['owner'] as UserRole[],
+    analytics: ['owner'] as UserRole[],
     settings: ['owner'] as UserRole[],
     users: ['owner'] as UserRole[]
   },
@@ -117,7 +118,8 @@ export const PERMISSIONS = {
     uploadSlip: ['owner', 'admin'] as UserRole[],
     exportReports: ['owner', 'admin'] as UserRole[],
     manageUsers: ['owner'] as UserRole[],
-    manageSettings: ['owner'] as UserRole[]
+    manageSettings: ['owner'] as UserRole[],
+    viewAnalytics: ['owner'] as UserRole[]
   }
 };
 
@@ -127,6 +129,20 @@ export function canAccessPage(role: UserRole, page: keyof typeof PERMISSIONS.pag
 
 export function canPerformAction(role: UserRole, action: keyof typeof PERMISSIONS.actions): boolean {
   return PERMISSIONS.actions[action].includes(role);
+}
+
+// ========================================
+// Owner Guard Helpers
+// ========================================
+
+export function isOwner(user: User | null): boolean {
+  return user?.role === 'owner';
+}
+
+export function requireOwner(user: User | null): void {
+  if (!isOwner(user)) {
+    throw new Error('Unauthorized: Owner access required');
+  }
 }
 
 // Role labels ภาษาไทย
