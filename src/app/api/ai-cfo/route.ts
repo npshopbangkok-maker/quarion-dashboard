@@ -8,6 +8,7 @@ interface TransactionSummary {
   expenseByCategory: { [key: string]: number };
   monthlyTrend: { month: string; income: number; expense: number; profit: number }[];
   recentTransactions: { date: string; type: string; amount: number; category: string }[];
+  currentBalance: number | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -30,11 +31,14 @@ export async function POST(request: NextRequest) {
 คุณคือ AI CFO (Chief Financial Officer) ที่ปรึกษาการเงินส่วนตัวของธุรกิจ
 ข้อมูลทางการเงินปัจจุบัน:
 
+� ยอดเงินในบัญชีปัจจุบัน: ${summary.currentBalance !== null ? `฿${summary.currentBalance.toLocaleString()}` : 'ไม่ได้ระบุ'}
+
 📊 สรุปภาพรวม:
 - รายรับรวม: ฿${summary.totalIncome.toLocaleString()}
 - รายจ่ายรวม: ฿${summary.totalExpense.toLocaleString()}
 - กำไรสุทธิ: ฿${summary.profit.toLocaleString()} (${summary.profit >= 0 ? 'กำไร' : 'ขาดทุน'})
 - อัตรากำไร: ${summary.totalIncome > 0 ? ((summary.profit / summary.totalIncome) * 100).toFixed(1) : 0}%
+${summary.currentBalance !== null ? `- ส่วนต่างระหว่างยอดจริงกับยอดจากระบบ: ฿${(summary.currentBalance - summary.profit).toLocaleString()}` : ''}
 
 📈 รายรับแยกตามหมวดหมู่:
 ${Object.entries(summary.incomeByCategory).map(([cat, amt]) => `- ${cat}: ฿${amt.toLocaleString()}`).join('\n') || '- ไม่มีข้อมูล'}

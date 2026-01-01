@@ -51,8 +51,22 @@ export default function AICFOAdvisor({ transactions, user }: AICFOAdvisorProps) 
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Load current balance from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('quarion_current_balance');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        setCurrentBalance(data.amount);
+      } catch (e) {
+        console.error('Failed to parse balance');
+      }
+    }
+  }, []);
 
   // Prepare financial summary
   const financialSummary = useMemo(() => {
@@ -108,9 +122,10 @@ export default function AICFOAdvisor({ transactions, user }: AICFOAdvisorProps) 
       incomeByCategory,
       expenseByCategory,
       monthlyTrend,
-      recentTransactions
+      recentTransactions,
+      currentBalance
     };
-  }, [transactions]);
+  }, [transactions, currentBalance]);
 
   // Scroll chat to bottom
   useEffect(() => {
