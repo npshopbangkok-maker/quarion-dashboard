@@ -135,9 +135,12 @@ export default function TransactionsPage() {
           // Update existing transaction in Supabase
           const updated = await dbUpdateTransaction(editingTransaction.id, transactionData);
           if (updated) {
-            setTransactions(transactions.map(t => 
+            const updatedList = transactions.map(t => 
               t.id === editingTransaction.id ? updated : t
-            ));
+            );
+            setTransactions(updatedList);
+            // Also save to localStorage for CurrentBalanceCard
+            saveTransactions(updatedList);
             // Dispatch custom event to notify other components
             window.dispatchEvent(new CustomEvent('transactions-updated'));
           }
@@ -145,7 +148,10 @@ export default function TransactionsPage() {
           // Create new transaction in Supabase
           const created = await dbCreateTransaction(transactionData);
           if (created) {
-            setTransactions([created, ...transactions]);
+            const updatedList = [created, ...transactions];
+            setTransactions(updatedList);
+            // Also save to localStorage for CurrentBalanceCard
+            saveTransactions(updatedList);
             // Dispatch custom event to notify other components
             window.dispatchEvent(new CustomEvent('transactions-updated'));
           }
@@ -218,7 +224,10 @@ export default function TransactionsPage() {
         if (isSupabaseConfigured()) {
           const success = await dbDeleteTransaction(id);
           if (success) {
-            setTransactions(transactions.filter(t => t.id !== id));
+            const updatedList = transactions.filter(t => t.id !== id);
+            setTransactions(updatedList);
+            // Also save to localStorage for CurrentBalanceCard
+            saveTransactions(updatedList);
             // Dispatch custom event to notify other components
             window.dispatchEvent(new CustomEvent('transactions-updated'));
           }
