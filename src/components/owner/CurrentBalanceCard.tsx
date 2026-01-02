@@ -77,45 +77,28 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
     };
   }, [loadTransactions]);
 
-  // Calculate transactions AFTER the balance was set
-  const { transactionsAfter, totalIncome, totalExpense } = useMemo(() => {
-    if (!bankBalance) {
-      // If no balance set, calculate from all transactions
-      let income = 0;
-      let expense = 0;
-      transactions.forEach((t) => {
-        if (t.type === 'income') income += t.amount;
-        else expense += t.amount;
-      });
-      return { transactionsAfter: 0, totalIncome: income, totalExpense: expense };
-    }
-
-    const balanceDate = new Date(bankBalance.lastUpdated);
+  // Calculate total income and expense from ALL transactions
+  const { totalIncome, totalExpense } = useMemo(() => {
     let income = 0;
     let expense = 0;
-    let count = 0;
-    
     transactions.forEach((t) => {
-      const txDate = new Date(t.created_at || t.date);
-      // Include transactions created AFTER the balance was set
-      if (txDate > balanceDate) {
-        count++;
-        if (t.type === 'income') income += t.amount;
-        else expense += t.amount;
-      }
+      if (t.type === 'income') income += t.amount;
+      else expense += t.amount;
     });
-    
-    return { transactionsAfter: count, totalIncome: income, totalExpense: expense };
-  }, [transactions, bankBalance]);
+    return { totalIncome: income, totalExpense: expense };
+  }, [transactions]);
 
-  // Current balance = Last synced + new transactions
+  // Calculated balance from transactions
+  const calculatedBalance = totalIncome - totalExpense;
+
+  // Current balance = Bank balance if set, otherwise calculated
   const currentBalance = useMemo(() => {
-    if (!bankBalance) return totalIncome - totalExpense;
-    return bankBalance.amount + totalIncome - totalExpense;
-  }, [bankBalance, totalIncome, totalExpense]);
+    if (!bankBalance) return calculatedBalance;
+    return bankBalance.amount;
+  }, [bankBalance, calculatedBalance]);
 
-  // Net change since last sync
-  const netChange = totalIncome - totalExpense;
+  // Difference between bank and calculated
+  const difference = bankBalance ? bankBalance.amount - calculatedBalance : 0;
 
   // Owner guard
   if (!isOwner(user)) return null;
@@ -217,96 +200,85 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Current Balance (Auto-updated) */}
+          {/* Calculated Balance from Transactions */}
           <div className="text-center p-3 lg:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
-            {bankBalance ? (
-              <>
-                <div className="text-xs text-blue-600 mb-1">ยอดเงินปัจจุบัน</div>
-                <div className={`text-2xl lg:text-3xl font-bold ${currentBalance >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
-                  ฿{currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </div>
-                {transactionsAfter > 0 && (
-                  <div className="text-xs text-gray-400 mt-1">
-                    +{transactionsAfter} รายการใหม่ตั้งแต่ {formatDate(bankBalance.lastUpdated)}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="py-2">
-                <Wallet className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-400 text-sm">ยังไม่ได้ตั้งยอดเริ่มต้น</p>
-                <button
-                  onClick={startEdit}
-                  className="mt-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 
-                             rounded-lg transition-colors"
-                >
-                  + ตั้งยอดเริ่มต้น
-                </button>
-              </div>
-            )}
+            <div className="text-xs text-blue-600 mb-1">ยอดจาก Transactions</div>
+            <div className={`text-2xl lg:text-3xl font-bold ${calculatedBalance >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+              ฿{calculatedBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              รายรับ - รายจ่าย ({transactions.length} รายการ)
+            </div>
           </div>
 
-          {/* Transaction Changes Since Last Sync */}
+          {/* Income / Expense Summary */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+              <span className="text-green-600 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" />
+                รับ
+              </span>
+              <span className="font-medium text-green-700">
+                +฿{totalIncome.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+              <span className="text-red-600 flex items-center gap-1">
+                <TrendingDown className="w-3 h-3" />
+                จ่าย
+              </span>
+              <span className="font-medium text-red-700">
+                -฿{totalExpense.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {/* Bank Balance (if set) */}
           {bankBalance && (
-            <div className="space-y-2 text-sm">
-              {/* Last Synced Balance */}
+            <div className="space-y-2 text-sm border-t pt-3">
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <span className="text-gray-500">ยอด Sync ล่าสุด</span>
+                <span className="text-gray-500">ยอดในธนาคาร</span>
                 <span className="font-medium text-gray-700">
                   ฿{bankBalance.amount.toLocaleString()}
                 </span>
               </div>
 
-              {/* Net Change */}
-              {netChange !== 0 && (
+              {/* Difference */}
+              {difference !== 0 && (
                 <div className={`flex items-center justify-between p-2 rounded-lg ${
-                  netChange >= 0 ? 'bg-green-50' : 'bg-red-50'
+                  difference >= 0 ? 'bg-yellow-50' : 'bg-orange-50'
                 }`}>
-                  <span className={netChange >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    เปลี่ยนแปลง ({transactionsAfter} รายการ)
+                  <span className="text-gray-600">
+                    {difference > 0 ? 'ยังไม่ได้บันทึก' : 'บันทึกเกิน'}
                   </span>
-                  <span className={`font-medium ${netChange >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                    {netChange >= 0 ? '+' : ''}฿{netChange.toLocaleString()}
+                  <span className={`font-medium ${difference >= 0 ? 'text-yellow-700' : 'text-orange-700'}`}>
+                    {difference >= 0 ? '+' : ''}฿{difference.toLocaleString()}
                   </span>
                 </div>
               )}
 
-              {transactionsAfter === 0 && (
-                <div className="flex items-center justify-center p-2 bg-gray-50 rounded-lg text-gray-500">
+              {difference === 0 && (
+                <div className="flex items-center justify-center p-2 bg-green-50 rounded-lg text-green-600">
                   <Check className="w-4 h-4 mr-1" />
-                  ยังไม่มีรายการใหม่
+                  ยอดตรงกัน!
                 </div>
               )}
 
-              {/* Quick Stats */}
-              {transactionsAfter > 0 && (
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-                    <span className="text-green-600 flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      รับ
-                    </span>
-                    <span className="font-medium text-green-700">
-                      +฿{totalIncome.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                    <span className="text-red-600 flex items-center gap-1">
-                      <TrendingDown className="w-3 h-3" />
-                      จ่าย
-                    </span>
-                    <span className="font-medium text-red-700">
-                      -฿{totalExpense.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Sync hint */}
-              <div className="text-xs text-gray-400 text-center pt-1">
-                กด 🔄 เพื่อ Sync ยอดใหม่จากธนาคาร
+              <div className="text-xs text-gray-400 text-center">
+                อัพเดต: {formatDate(bankBalance.lastUpdated)}
               </div>
             </div>
+          )}
+
+          {/* Set bank balance button */}
+          {!bankBalance && (
+            <button
+              onClick={startEdit}
+              className="w-full py-2 text-sm text-blue-600 hover:bg-blue-50 
+                         rounded-lg transition-colors border border-blue-200"
+            >
+              + ตั้งยอดเงินในธนาคาร
+            </button>
           )}
         </div>
       )}
