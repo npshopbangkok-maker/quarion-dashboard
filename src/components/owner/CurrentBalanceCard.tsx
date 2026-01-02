@@ -57,6 +57,11 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
     };
     window.addEventListener('transactions-updated', handleTransactionsUpdated);
 
+    // Poll localStorage every 2 seconds for cross-page updates
+    const pollInterval = setInterval(() => {
+      loadTransactions();
+    }, 2000);
+
     // Listen for storage event (cross-tab)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'quarion_transactions') {
@@ -68,6 +73,7 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
     return () => {
       window.removeEventListener('transactions-updated', handleTransactionsUpdated);
       window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
     };
   }, [loadTransactions]);
 
