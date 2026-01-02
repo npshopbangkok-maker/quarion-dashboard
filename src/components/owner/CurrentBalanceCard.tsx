@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Transaction, User } from '@/types/database';
 import { isOwner } from '@/lib/auth';
+import { getTransactions } from '@/lib/storage';
 import { 
   Wallet, 
   Check, 
@@ -13,7 +14,6 @@ import {
 } from 'lucide-react';
 
 interface CurrentBalanceCardProps {
-  transactions: Transaction[];
   user: User | null;
 }
 
@@ -24,13 +24,21 @@ interface BankBalanceData {
   lastUpdated: string; // ISO date - transactions after this date will be added/subtracted
 }
 
-export default function CurrentBalanceCard({ transactions, user }: CurrentBalanceCardProps) {
+export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [bankBalance, setBankBalance] = useState<BankBalanceData | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  // Load bank balance from localStorage
+  // Load transactions from localStorage
+  const loadTransactions = useCallback(() => {
+    const txns = getTransactions();
+    setTransactions(txns);
+  }, []);
+
+  // Load bank balance and transactions from localStorage
   useEffect(() => {
+    // Load bank balance
     const saved = localStorage.getItem(BANK_BALANCE_KEY);
     if (saved) {
       try {
@@ -39,7 +47,29 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
         console.error('Failed to parse bank balance data');
       }
     }
-  }, []);
+
+    // Load transactions
+    loadTransactions();
+
+    // Listen for custom event when transactions are updated (same tab)
+    const handleTransactionsUpdated = () => {
+      loadTransactions();
+    };
+    window.addEventListener('transactions-updated', handleTransactionsUpdated);
+
+    // Listen for storage event (cross-tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'quarion_transactions') {
+        loadTransactions();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('transactions-updated', handleTransactionsUpdated);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [loadTransactions]);
 
   // Calculate transactions AFTER the balance was set
   const { transactionsAfter, totalIncome, totalExpense } = useMemo(() => {

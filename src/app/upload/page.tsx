@@ -249,6 +249,9 @@ export default function UploadPage() {
           user: user || undefined,
         };
         saveTransactions([newTransaction, ...existingTransactions]);
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('transactions-updated'));
       }
       
       // Send notification

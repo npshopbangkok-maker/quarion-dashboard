@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
               <>
                 {/* Row 1: Current Balance + Quick Snapshot + Progress Tracker + Saving Goal */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
-                  <CurrentBalanceCard transactions={transactions} user={user} />
+                  <CurrentBalanceCard user={user} />
                   <QuickSnapshot transactions={transactions} user={user} />
                   <MonthlyProgressTracker transactions={transactions} user={user} />
                   <SavingGoalCard transactions={transactions} user={user} />

@@ -138,12 +138,16 @@ export default function TransactionsPage() {
             setTransactions(transactions.map(t => 
               t.id === editingTransaction.id ? updated : t
             ));
+            // Dispatch custom event to notify other components
+            window.dispatchEvent(new CustomEvent('transactions-updated'));
           }
         } else {
           // Create new transaction in Supabase
           const created = await dbCreateTransaction(transactionData);
           if (created) {
             setTransactions([created, ...transactions]);
+            // Dispatch custom event to notify other components
+            window.dispatchEvent(new CustomEvent('transactions-updated'));
           }
         }
       } else {
@@ -172,6 +176,9 @@ export default function TransactionsPage() {
 
         setTransactions(updatedTransactions);
         saveTransactions(updatedTransactions);
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('transactions-updated'));
       }
     } catch (error) {
       console.error('Error saving transaction:', error);
@@ -212,11 +219,16 @@ export default function TransactionsPage() {
           const success = await dbDeleteTransaction(id);
           if (success) {
             setTransactions(transactions.filter(t => t.id !== id));
+            // Dispatch custom event to notify other components
+            window.dispatchEvent(new CustomEvent('transactions-updated'));
           }
         } else {
           const updatedTransactions = transactions.filter(t => t.id !== id);
           setTransactions(updatedTransactions);
           saveTransactions(updatedTransactions);
+          
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new CustomEvent('transactions-updated'));
         }
       } catch (error) {
         console.error('Error deleting transaction:', error);
