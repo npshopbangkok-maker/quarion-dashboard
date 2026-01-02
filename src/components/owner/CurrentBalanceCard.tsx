@@ -5,13 +5,11 @@ import { Transaction, User } from '@/types/database';
 import { isOwner } from '@/lib/auth';
 import { 
   Wallet, 
-  Edit3, 
   Check, 
   X, 
   TrendingUp, 
   TrendingDown,
-  RefreshCw,
-  AlertTriangle
+  RefreshCw
 } from 'lucide-react';
 
 interface CurrentBalanceCardProps {
@@ -23,7 +21,7 @@ const BANK_BALANCE_KEY = 'quarion_bank_balance';
 
 interface BankBalanceData {
   amount: number;
-  lastUpdated: string;
+  lastUpdated: string; // ISO date - transactions after this date will be added/subtracted
 }
 
 export default function CurrentBalanceCard({ transactions, user }: CurrentBalanceCardProps) {
@@ -43,27 +41,45 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
     }
   }, []);
 
-  // Calculate total income and expense from ALL transactions
-  const { totalIncome, totalExpense } = useMemo(() => {
+  // Calculate transactions AFTER the balance was set
+  const { transactionsAfter, totalIncome, totalExpense } = useMemo(() => {
+    if (!bankBalance) {
+      // If no balance set, calculate from all transactions
+      let income = 0;
+      let expense = 0;
+      transactions.forEach((t) => {
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
+      });
+      return { transactionsAfter: 0, totalIncome: income, totalExpense: expense };
+    }
+
+    const balanceDate = new Date(bankBalance.lastUpdated);
     let income = 0;
     let expense = 0;
+    let count = 0;
     
     transactions.forEach((t) => {
-      if (t.type === 'income') {
-        income += t.amount;
-      } else {
-        expense += t.amount;
+      const txDate = new Date(t.created_at || t.date);
+      // Include transactions created AFTER the balance was set
+      if (txDate > balanceDate) {
+        count++;
+        if (t.type === 'income') income += t.amount;
+        else expense += t.amount;
       }
     });
     
-    return { totalIncome: income, totalExpense: expense };
-  }, [transactions]);
+    return { transactionsAfter: count, totalIncome: income, totalExpense: expense };
+  }, [transactions, bankBalance]);
 
-  // Calculated balance from transactions
-  const calculatedBalance = totalIncome - totalExpense;
+  // Current balance = Last synced + new transactions
+  const currentBalance = useMemo(() => {
+    if (!bankBalance) return totalIncome - totalExpense;
+    return bankBalance.amount + totalIncome - totalExpense;
+  }, [bankBalance, totalIncome, totalExpense]);
 
-  // Difference (unrecorded transactions)
-  const difference = bankBalance ? bankBalance.amount - calculatedBalance : 0;
+  // Net change since last sync
+  const netChange = totalIncome - totalExpense;
 
   // Owner guard
   if (!isOwner(user)) return null;
@@ -92,7 +108,7 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
   };
 
   const startEdit = () => {
-    setInputValue(bankBalance?.amount.toString() || '');
+    setInputValue(currentBalance.toString());
     setIsEditing(true);
   };
 
@@ -165,88 +181,94 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Bank Balance (User Input) */}
+          {/* Current Balance (Auto-updated) */}
           <div className="text-center p-3 lg:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
             {bankBalance ? (
               <>
-                <div className="text-xs text-blue-600 mb-1">ยอดจริงในธนาคาร</div>
-                <div className={`text-2xl lg:text-3xl font-bold ${bankBalance.amount >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
-                  ฿{bankBalance.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <div className="text-xs text-blue-600 mb-1">ยอดเงินปัจจุบัน</div>
+                <div className={`text-2xl lg:text-3xl font-bold ${currentBalance >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                  ฿{currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  อัพเดท: {formatDate(bankBalance.lastUpdated)}
-                </div>
+                {transactionsAfter > 0 && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    +{transactionsAfter} รายการใหม่ตั้งแต่ {formatDate(bankBalance.lastUpdated)}
+                  </div>
+                )}
               </>
             ) : (
               <div className="py-2">
                 <Wallet className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-400 text-sm">ยังไม่ได้กรอกยอด</p>
+                <p className="text-gray-400 text-sm">ยังไม่ได้ตั้งยอดเริ่มต้น</p>
                 <button
                   onClick={startEdit}
                   className="mt-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 
                              rounded-lg transition-colors"
                 >
-                  + กรอกยอดในธนาคาร
+                  + ตั้งยอดเริ่มต้น
                 </button>
               </div>
             )}
           </div>
 
-          {/* Comparison */}
+          {/* Transaction Changes Since Last Sync */}
           {bankBalance && (
             <div className="space-y-2 text-sm">
-              {/* Calculated Balance */}
+              {/* Last Synced Balance */}
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <span className="text-gray-500">ยอดจาก Transactions</span>
-                <span className={`font-medium ${calculatedBalance >= 0 ? 'text-gray-700' : 'text-red-600'}`}>
-                  ฿{calculatedBalance.toLocaleString()}
+                <span className="text-gray-500">ยอด Sync ล่าสุด</span>
+                <span className="font-medium text-gray-700">
+                  ฿{bankBalance.amount.toLocaleString()}
                 </span>
               </div>
 
-              {/* Difference - Unrecorded */}
-              {difference !== 0 && (
-                <div className={`flex items-center justify-between p-2 rounded-lg border ${
-                  Math.abs(difference) > 1000 
-                    ? 'bg-yellow-50 border-yellow-200' 
-                    : 'bg-gray-50 border-gray-100'
+              {/* Net Change */}
+              {netChange !== 0 && (
+                <div className={`flex items-center justify-between p-2 rounded-lg ${
+                  netChange >= 0 ? 'bg-green-50' : 'bg-red-50'
                 }`}>
-                  <span className="text-gray-600 flex items-center gap-1">
-                    {Math.abs(difference) > 1000 && <AlertTriangle className="w-3 h-3 text-yellow-600" />}
-                    ยังไม่ได้บันทึก
+                  <span className={netChange >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    เปลี่ยนแปลง ({transactionsAfter} รายการ)
                   </span>
-                  <span className={`font-medium ${difference > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {difference > 0 ? '+' : ''}฿{difference.toLocaleString()}
+                  <span className={`font-medium ${netChange >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {netChange >= 0 ? '+' : ''}฿{netChange.toLocaleString()}
                   </span>
                 </div>
               )}
 
-              {difference === 0 && (
-                <div className="flex items-center justify-center p-2 bg-green-50 rounded-lg text-green-600">
+              {transactionsAfter === 0 && (
+                <div className="flex items-center justify-center p-2 bg-gray-50 rounded-lg text-gray-500">
                   <Check className="w-4 h-4 mr-1" />
-                  ยอดตรงกันแล้ว!
+                  ยังไม่มีรายการใหม่
                 </div>
               )}
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-                  <span className="text-green-600 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    รับ
-                  </span>
-                  <span className="font-medium text-green-700">
-                    +฿{totalIncome.toLocaleString()}
-                  </span>
+              {transactionsAfter > 0 && (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                    <span className="text-green-600 flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      รับ
+                    </span>
+                    <span className="font-medium text-green-700">
+                      +฿{totalIncome.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                    <span className="text-red-600 flex items-center gap-1">
+                      <TrendingDown className="w-3 h-3" />
+                      จ่าย
+                    </span>
+                    <span className="font-medium text-red-700">
+                      -฿{totalExpense.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                  <span className="text-red-600 flex items-center gap-1">
-                    <TrendingDown className="w-3 h-3" />
-                    จ่าย
-                  </span>
-                  <span className="font-medium text-red-700">
-                    -฿{totalExpense.toLocaleString()}
-                  </span>
-                </div>
+              )}
+
+              {/* Sync hint */}
+              <div className="text-xs text-gray-400 text-center pt-1">
+                กด 🔄 เพื่อ Sync ยอดใหม่จากธนาคาร
               </div>
             </div>
           )}
