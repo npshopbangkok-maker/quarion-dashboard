@@ -10,7 +10,8 @@ import {
   X, 
   TrendingUp, 
   TrendingDown,
-  Banknote
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 
 interface CurrentBalanceCardProps {
@@ -18,26 +19,26 @@ interface CurrentBalanceCardProps {
   user: User | null;
 }
 
-const STORAGE_KEY = 'quarion_initial_balance';
+const BANK_BALANCE_KEY = 'quarion_bank_balance';
 
-interface InitialBalanceData {
+interface BankBalanceData {
   amount: number;
-  setDate: string;
+  lastUpdated: string;
 }
 
 export default function CurrentBalanceCard({ transactions, user }: CurrentBalanceCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [initialBalance, setInitialBalance] = useState<InitialBalanceData | null>(null);
+  const [bankBalance, setBankBalance] = useState<BankBalanceData | null>(null);
 
-  // Load initial balance from localStorage
+  // Load bank balance from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(BANK_BALANCE_KEY);
     if (saved) {
       try {
-        setInitialBalance(JSON.parse(saved));
+        setBankBalance(JSON.parse(saved));
       } catch (e) {
-        console.error('Failed to parse initial balance data');
+        console.error('Failed to parse bank balance data');
       }
     }
   }, []);
@@ -58,14 +59,11 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
     return { totalIncome: income, totalExpense: expense };
   }, [transactions]);
 
-  // Current balance = Initial + Income - Expense
-  const currentBalance = useMemo(() => {
-    const initial = initialBalance?.amount || 0;
-    return initial + totalIncome - totalExpense;
-  }, [initialBalance, totalIncome, totalExpense]);
+  // Calculated balance from transactions
+  const calculatedBalance = totalIncome - totalExpense;
 
-  // Net profit (just from transactions)
-  const netProfit = totalIncome - totalExpense;
+  // Difference (unrecorded transactions)
+  const difference = bankBalance ? bankBalance.amount - calculatedBalance : 0;
 
   // Owner guard
   if (!isOwner(user)) return null;
@@ -77,13 +75,13 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
       return;
     }
 
-    const data: InitialBalanceData = {
+    const data: BankBalanceData = {
       amount,
-      setDate: new Date().toISOString()
+      lastUpdated: new Date().toISOString()
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    setInitialBalance(data);
+    localStorage.setItem(BANK_BALANCE_KEY, JSON.stringify(data));
+    setBankBalance(data);
     setIsEditing(false);
     setInputValue('');
   };
@@ -94,7 +92,7 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
   };
 
   const startEdit = () => {
-    setInputValue(initialBalance?.amount.toString() || '');
+    setInputValue(bankBalance?.amount.toString() || '');
     setIsEditing(true);
   };
 
@@ -103,7 +101,8 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
     return date.toLocaleDateString('th-TH', {
       day: 'numeric',
       month: 'short',
-      year: 'numeric'
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -112,25 +111,25 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Wallet className="w-5 h-5 text-blue-500" />
-          <h3 className="text-sm lg:text-base font-semibold text-gray-800">ยอดเงินปัจจุบัน</h3>
+          <h3 className="text-sm lg:text-base font-semibold text-gray-800">ยอดเงินในบัญชี</h3>
         </div>
-        {!isEditing && initialBalance && (
+        {!isEditing && (
           <button
             onClick={startEdit}
             className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-            title="แก้ไขยอดเริ่มต้น"
+            title="อัพเดทยอดเงิน"
           >
-            <Edit3 className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Initial Balance Input */}
+      {/* Bank Balance Input */}
       {isEditing ? (
         <div className="space-y-3">
           <div>
             <label className="block text-sm text-gray-600 mb-1">
-              ยอดเงินเริ่มต้น (บาท)
+              ยอดเงินจริงในธนาคาร (บาท)
             </label>
             <input
               type="number"
@@ -142,7 +141,7 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
                          rounded-xl focus:outline-none focus:border-blue-500 bg-blue-50"
             />
             <p className="text-xs text-gray-400 mt-1 text-center">
-              กรอกยอดเงินที่มีก่อนเริ่มใช้ระบบ
+              ดูยอดจาก Mobile Banking แล้วกรอก
             </p>
           </div>
           <div className="flex gap-2">
@@ -166,80 +165,88 @@ export default function CurrentBalanceCard({ transactions, user }: CurrentBalanc
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Current Balance (Auto-calculated) */}
+          {/* Bank Balance (User Input) */}
           <div className="text-center p-3 lg:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
-            {initialBalance ? (
+            {bankBalance ? (
               <>
-                <div className={`text-2xl lg:text-3xl font-bold ${currentBalance >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
-                  ฿{currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <div className="text-xs text-blue-600 mb-1">ยอดจริงในธนาคาร</div>
+                <div className={`text-2xl lg:text-3xl font-bold ${bankBalance.amount >= 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                  ฿{bankBalance.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  คำนวณอัตโนมัติ
+                  อัพเดท: {formatDate(bankBalance.lastUpdated)}
                 </div>
               </>
             ) : (
               <div className="py-2">
-                <Banknote className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-400 text-sm">ยังไม่ได้ตั้งยอดเริ่มต้น</p>
+                <Wallet className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-gray-400 text-sm">ยังไม่ได้กรอกยอด</p>
                 <button
                   onClick={startEdit}
                   className="mt-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 
                              rounded-lg transition-colors"
                 >
-                  + ตั้งยอดเริ่มต้น
+                  + กรอกยอดในธนาคาร
                 </button>
               </div>
             )}
           </div>
 
-          {/* Breakdown */}
-          {initialBalance && (
+          {/* Comparison */}
+          {bankBalance && (
             <div className="space-y-2 text-sm">
-              {/* Initial Balance */}
+              {/* Calculated Balance */}
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <span className="text-gray-500">ยอดเริ่มต้น</span>
-                <span className="font-medium text-gray-700">
-                  ฿{initialBalance.amount.toLocaleString()}
-                </span>
-              </div>
-              
-              {/* Total Income */}
-              <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-                <span className="text-green-600 flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" />
-                  รายรับทั้งหมด
-                </span>
-                <span className="font-medium text-green-700">
-                  +฿{totalIncome.toLocaleString()}
-                </span>
-              </div>
-              
-              {/* Total Expense */}
-              <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                <span className="text-red-600 flex items-center gap-1">
-                  <TrendingDown className="w-3 h-3" />
-                  รายจ่ายทั้งหมด
-                </span>
-                <span className="font-medium text-red-700">
-                  -฿{totalExpense.toLocaleString()}
+                <span className="text-gray-500">ยอดจาก Transactions</span>
+                <span className={`font-medium ${calculatedBalance >= 0 ? 'text-gray-700' : 'text-red-600'}`}>
+                  ฿{calculatedBalance.toLocaleString()}
                 </span>
               </div>
 
-              {/* Net Profit/Loss */}
-              <div className={`flex items-center justify-between p-2 rounded-lg ${
-                netProfit >= 0 ? 'bg-blue-50' : 'bg-orange-50'
-              }`}>
-                <span className={netProfit >= 0 ? 'text-blue-600' : 'text-orange-600'}>
-                  กำไร/ขาดทุนสุทธิ
-                </span>
-                <span className={`font-medium ${netProfit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                  {netProfit >= 0 ? '+' : ''}฿{netProfit.toLocaleString()}
-                </span>
-              </div>
+              {/* Difference - Unrecorded */}
+              {difference !== 0 && (
+                <div className={`flex items-center justify-between p-2 rounded-lg border ${
+                  Math.abs(difference) > 1000 
+                    ? 'bg-yellow-50 border-yellow-200' 
+                    : 'bg-gray-50 border-gray-100'
+                }`}>
+                  <span className="text-gray-600 flex items-center gap-1">
+                    {Math.abs(difference) > 1000 && <AlertTriangle className="w-3 h-3 text-yellow-600" />}
+                    ยังไม่ได้บันทึก
+                  </span>
+                  <span className={`font-medium ${difference > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {difference > 0 ? '+' : ''}฿{difference.toLocaleString()}
+                  </span>
+                </div>
+              )}
 
-              {/* Set date info */}
-              <div className="text-xs text-gray-400 text-center pt-1">
-                ตั้งยอดเริ่มต้นเมื่อ {formatDate(initialBalance.setDate)}
+              {difference === 0 && (
+                <div className="flex items-center justify-center p-2 bg-green-50 rounded-lg text-green-600">
+                  <Check className="w-4 h-4 mr-1" />
+                  ยอดตรงกันแล้ว!
+                </div>
+              )}
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                  <span className="text-green-600 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    รับ
+                  </span>
+                  <span className="font-medium text-green-700">
+                    +฿{totalIncome.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                  <span className="text-red-600 flex items-center gap-1">
+                    <TrendingDown className="w-3 h-3" />
+                    จ่าย
+                  </span>
+                  <span className="font-medium text-red-700">
+                    -฿{totalExpense.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
           )}
