@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Transaction } from '@/types/database';
 import { isOwner, User } from '@/lib/auth';
-import { Target, TrendingUp, Calendar } from 'lucide-react';
+import { getGlobalSetting, setGlobalSetting } from '@/lib/database';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { Target, TrendingUp, Calendar, Loader2 } from 'lucide-react';
 
 interface MonthlyProgressTrackerProps {
   transactions: Transaction[];
@@ -21,15 +23,35 @@ export default function MonthlyProgressTracker({ transactions, user }: MonthlyPr
     lastUpdated: new Date().toISOString()
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [newGoal, setNewGoal] = useState('');
 
-  // Load saved goal
-  useEffect(() => {
-    const saved = localStorage.getItem('owner-monthly-goal');
-    if (saved) {
-      setGoalSettings(JSON.parse(saved));
+  // Load saved goal from Supabase
+  const loadGoal = useCallback(async () => {
+    if (isSupabaseConfigured()) {
+      const saved = await getGlobalSetting<GoalSettings>('monthly_goal');
+      if (saved) {
+        setGoalSettings(saved);
+        return;
+      }
+    }
+    
+    // Fallback: migrate from localStorage
+    const localSaved = localStorage.getItem('owner-monthly-goal');
+    if (localSaved) {
+      const data = JSON.parse(localSaved);
+      setGoalSettings(data);
+      // Migrate to Supabase
+      if (isSupabaseConfigured()) {
+        await setGlobalSetting('monthly_goal', data);
+        localStorage.removeItem('owner-monthly-goal');
+      }
     }
   }, []);
+
+  useEffect(() => {
+    loadGoal();
+  }, [loadGoal]);
 
   // Calculate current month profit
   const { currentProfit, daysRemaining, dailyNeeded } = useMemo(() => {
@@ -69,16 +91,24 @@ export default function MonthlyProgressTracker({ transactions, user }: MonthlyPr
   const progress = Math.min((currentProfit / goalSettings.monthlyGoal) * 100, 100);
   const progressClamped = Math.max(0, progress);
 
-  const saveGoal = () => {
+  const saveGoal = async () => {
     const goal = parseFloat(newGoal);
     if (goal > 0) {
+      setIsSaving(true);
       const settings = {
         monthlyGoal: goal,
         lastUpdated: new Date().toISOString()
       };
+      
+      if (isSupabaseConfigured()) {
+        await setGlobalSetting('monthly_goal', settings);
+      } else {
+        localStorage.setItem('owner-monthly-goal', JSON.stringify(settings));
+      }
+      
       setGoalSettings(settings);
-      localStorage.setItem('owner-monthly-goal', JSON.stringify(settings));
       setIsEditing(false);
+      setIsSaving(false);
     }
   };
 

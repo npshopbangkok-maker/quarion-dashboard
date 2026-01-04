@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Transaction } from '@/types/database';
 import { isOwner, User } from '@/lib/auth';
-import { PiggyBank, Target, Percent, TrendingUp } from 'lucide-react';
+import { getGlobalSetting, setGlobalSetting } from '@/lib/database';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { PiggyBank, Target, Percent, TrendingUp, Loader2 } from 'lucide-react';
 
 interface SavingGoalCardProps {
   transactions: Transaction[];
@@ -25,16 +27,36 @@ export default function SavingGoalCard({ transactions, user }: SavingGoalCardPro
     lastUpdated: ''
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [newGoal, setNewGoal] = useState('');
   const [newRate, setNewRate] = useState('');
 
-  // Load settings
-  useEffect(() => {
-    const saved = localStorage.getItem('owner-saving-settings');
-    if (saved) {
-      setSettings(JSON.parse(saved));
+  // Load settings from Supabase
+  const loadSettings = useCallback(async () => {
+    if (isSupabaseConfigured()) {
+      const saved = await getGlobalSetting<SavingSettings>('saving_settings');
+      if (saved) {
+        setSettings(saved);
+        return;
+      }
+    }
+    
+    // Fallback: migrate from localStorage
+    const localSaved = localStorage.getItem('owner-saving-settings');
+    if (localSaved) {
+      const data = JSON.parse(localSaved);
+      setSettings(data);
+      // Migrate to Supabase
+      if (isSupabaseConfigured()) {
+        await setGlobalSetting('saving_settings', data);
+        localStorage.removeItem('owner-saving-settings');
+      }
     }
   }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   // Calculate savings from transactions
   const { todayProfit, todaySaving, accumulatedSaving } = useMemo(() => {
@@ -76,9 +98,11 @@ export default function SavingGoalCard({ transactions, user }: SavingGoalCardPro
 
   const progress = Math.min((accumulatedSaving / settings.goalAmount) * 100, 100);
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     const goal = parseFloat(newGoal) || settings.goalAmount;
     const rate = parseFloat(newRate) || settings.savingRate;
+    
+    setIsSaving(true);
     
     const newSettings = {
       ...settings,
@@ -87,9 +111,15 @@ export default function SavingGoalCard({ transactions, user }: SavingGoalCardPro
       lastUpdated: new Date().toISOString()
     };
     
+    if (isSupabaseConfigured()) {
+      await setGlobalSetting('saving_settings', newSettings);
+    } else {
+      localStorage.setItem('owner-saving-settings', JSON.stringify(newSettings));
+    }
+    
     setSettings(newSettings);
-    localStorage.setItem('owner-saving-settings', JSON.stringify(newSettings));
     setIsEditing(false);
+    setIsSaving(false);
   };
 
   const getProgressColor = () => {

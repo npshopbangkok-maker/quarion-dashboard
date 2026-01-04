@@ -218,3 +218,65 @@ export function calculateCategoryData(transactions: Transaction[]) {
 
   return categoryData;
 }
+
+// ============ USER SETTINGS (Supabase) ============
+
+export type SettingKey = 'initial_balance' | 'monthly_goal' | 'saving_settings';
+
+export async function getUserSetting<T>(userId: string, key: SettingKey): Promise<T | null> {
+  if (!isSupabaseConfigured() || !supabase) {
+    console.log('Supabase not configured for settings');
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('setting_value')
+    .eq('user_id', userId)
+    .eq('setting_key', key)
+    .single();
+
+  if (error) {
+    if (error.code !== 'PGRST116') { // Not found is OK
+      console.error('Error fetching setting:', error);
+    }
+    return null;
+  }
+
+  return data?.setting_value as T;
+}
+
+export async function setUserSetting<T>(userId: string, key: SettingKey, value: T): Promise<boolean> {
+  if (!isSupabaseConfigured() || !supabase) {
+    console.log('Supabase not configured for settings');
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('user_settings')
+    .upsert({
+      user_id: userId,
+      setting_key: key,
+      setting_value: value,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,setting_key',
+    });
+
+  if (error) {
+    console.error('Error saving setting:', error);
+    return false;
+  }
+
+  return true;
+}
+
+// ============ GLOBAL SETTINGS (shared across all users) ============
+
+export async function getGlobalSetting<T>(key: SettingKey): Promise<T | null> {
+  return getUserSetting<T>('global', key);
+}
+
+export async function setGlobalSetting<T>(key: SettingKey, value: T): Promise<boolean> {
+  return setUserSetting('global', key, value);
+}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Transaction, User } from '@/types/database';
 import { isOwner } from '@/lib/auth';
-import { fetchTransactions } from '@/lib/database';
+import { fetchTransactions, getGlobalSetting, setGlobalSetting } from '@/lib/database';
 import { getTransactions } from '@/lib/storage';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { 
@@ -13,14 +13,13 @@ import {
   TrendingUp, 
   TrendingDown,
   RefreshCw,
-  Calendar
+  Calendar,
+  Loader2
 } from 'lucide-react';
 
 interface CurrentBalanceCardProps {
   user: User | null;
 }
-
-const INITIAL_BALANCE_KEY = 'quarion_initial_balance';
 
 interface InitialBalanceData {
   amount: number;        // ยอดเริ่มต้นที่ตั้งไว้
@@ -29,6 +28,7 @@ interface InitialBalanceData {
 
 export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [initialBalance, setInitialBalance] = useState<InitialBalanceData | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -58,27 +58,44 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
     }
   }, []);
 
-  // Load initial balance and transactions
-  useEffect(() => {
-    let isMounted = true;
+  // Load initial balance from Supabase
+  const loadInitialBalance = useCallback(async () => {
+    if (isSupabaseConfigured()) {
+      const saved = await getGlobalSetting<InitialBalanceData>('initial_balance');
+      if (saved) {
+        setInitialBalance(saved);
+        return;
+      }
+    }
     
-    // Load initial balance from localStorage
-    const saved = localStorage.getItem(INITIAL_BALANCE_KEY);
-    if (saved) {
+    // Fallback: migrate from localStorage
+    const localSaved = localStorage.getItem('quarion_initial_balance');
+    if (localSaved) {
       try {
-        setInitialBalance(JSON.parse(saved));
+        const data = JSON.parse(localSaved);
+        setInitialBalance(data);
+        // Migrate to Supabase
+        if (isSupabaseConfigured()) {
+          await setGlobalSetting('initial_balance', data);
+          localStorage.removeItem('quarion_initial_balance');
+        }
       } catch (e) {
         console.error('Failed to parse initial balance data:', e);
       }
     }
+  }, []);
 
-    // Load transactions with mount check
-    const safeLoadTransactions = async () => {
+  // Load initial balance and transactions
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadAll = async () => {
       if (!isMounted) return;
+      await loadInitialBalance();
       await loadTransactions();
     };
     
-    safeLoadTransactions();
+    loadAll();
 
     // Listen for custom event when transactions are updated
     const handleTransactionsUpdated = () => {
@@ -96,7 +113,7 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
       window.removeEventListener('transactions-updated', handleTransactionsUpdated);
       clearInterval(pollInterval);
     };
-  }, [loadTransactions]);
+  }, [loadTransactions, loadInitialBalance]);
 
   // Calculate transactions AFTER the set date
   const { transactionsAfterSetDate, incomeAfter, expenseAfter } = useMemo(() => {
@@ -139,22 +156,35 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
   // Owner guard
   if (!isOwner(user)) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const amount = parseFloat(inputValue);
     if (isNaN(amount)) {
       alert('กรุณากรอกตัวเลขที่ถูกต้อง');
       return;
     }
 
+    setIsSaving(true);
+
     const data: InitialBalanceData = {
       amount,
       setDate: new Date().toISOString()
     };
 
-    localStorage.setItem(INITIAL_BALANCE_KEY, JSON.stringify(data));
+    if (isSupabaseConfigured()) {
+      const success = await setGlobalSetting('initial_balance', data);
+      if (!success) {
+        alert('บันทึกไม่สำเร็จ');
+        setIsSaving(false);
+        return;
+      }
+    } else {
+      localStorage.setItem('quarion_initial_balance', JSON.stringify(data));
+    }
+    
     setInitialBalance(data);
     setIsEditing(false);
     setInputValue('');
+    setIsSaving(false);
   };
 
   const handleCancel = () => {
