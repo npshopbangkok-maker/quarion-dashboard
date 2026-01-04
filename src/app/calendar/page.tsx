@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import TopBar from '@/components/TopBar';
 import ProtectedPage from '@/components/ProtectedPage';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -17,7 +18,8 @@ import {
   Bell,
   Trash2,
   Edit2,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 // Types
@@ -84,6 +86,8 @@ export default function CalendarPage() {
   const [scheduledTransactions, setScheduledTransactions] = useState<ScheduledTransaction[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<ScheduledTransaction | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -97,18 +101,104 @@ export default function CalendarPage() {
     description: '',
   });
 
-  // Load from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('quarion_scheduled_transactions');
-    if (saved) {
-      setScheduledTransactions(JSON.parse(saved));
+  // Load scheduled transactions from Supabase
+  const loadTransactions = useCallback(async () => {
+    setIsLoading(true);
+    
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('scheduled_transactions')
+          .select('*')
+          .order('date', { ascending: true });
+
+        if (error) {
+          console.error('Error loading scheduled transactions:', error);
+          // Fallback to localStorage
+          const saved = localStorage.getItem('quarion_scheduled_transactions');
+          if (saved) {
+            setScheduledTransactions(JSON.parse(saved));
+          }
+        } else if (data) {
+          // Map from snake_case to camelCase
+          const mapped = data.map(t => ({
+            id: t.id,
+            title: t.title,
+            amount: t.amount,
+            type: t.type,
+            category: t.category,
+            date: t.date,
+            isRecurring: t.is_recurring,
+            recurringType: t.recurring_type,
+            description: t.description,
+            createdAt: t.created_at,
+          }));
+          setScheduledTransactions(mapped);
+          
+          // Check for localStorage data to migrate
+          const localData = localStorage.getItem('quarion_scheduled_transactions');
+          if (localData && data.length === 0) {
+            const localTransactions = JSON.parse(localData);
+            if (localTransactions.length > 0) {
+              console.log('Migrating', localTransactions.length, 'transactions from localStorage to Supabase...');
+              await migrateLocalToSupabase(localTransactions);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load from Supabase:', err);
+      }
+    } else {
+      // No Supabase - use localStorage
+      const saved = localStorage.getItem('quarion_scheduled_transactions');
+      if (saved) {
+        setScheduledTransactions(JSON.parse(saved));
+      }
     }
+    
+    setIsLoading(false);
   }, []);
 
-  // Save to localStorage
+  // Migrate localStorage data to Supabase
+  const migrateLocalToSupabase = async (localTransactions: ScheduledTransaction[]) => {
+    if (!supabase) return;
+    
+    try {
+      const toInsert = localTransactions.map(t => ({
+        title: t.title,
+        amount: t.amount,
+        type: t.type,
+        category: t.category,
+        date: t.date,
+        is_recurring: t.isRecurring,
+        recurring_type: t.recurringType,
+        description: t.description || null,
+        created_at: t.createdAt,
+      }));
+
+      const { data, error } = await supabase
+        .from('scheduled_transactions')
+        .insert(toInsert)
+        .select();
+
+      if (error) {
+        console.error('Migration error:', error);
+      } else {
+        console.log('Successfully migrated', data?.length, 'transactions');
+        // Clear localStorage after successful migration
+        localStorage.removeItem('quarion_scheduled_transactions');
+        // Reload to get proper IDs
+        loadTransactions();
+      }
+    } catch (err) {
+      console.error('Migration failed:', err);
+    }
+  };
+
+  // Load on mount
   useEffect(() => {
-    localStorage.setItem('quarion_scheduled_transactions', JSON.stringify(scheduledTransactions));
-  }, [scheduledTransactions]);
+    loadTransactions();
+  }, [loadTransactions]);
 
   const handleLogout = () => {
     logout();
@@ -204,36 +294,113 @@ export default function CalendarPage() {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     
-    const transaction: ScheduledTransaction = {
-      id: editingTransaction?.id || Date.now().toString(),
-      title: formData.title,
-      amount: parseFloat(formData.amount),
-      type: formData.type,
-      category: formData.category,
-      date: formData.date,
-      isRecurring: formData.isRecurring,
-      recurringType: formData.recurringType,
-      description: formData.description,
-      createdAt: editingTransaction?.createdAt || new Date().toISOString(),
-    };
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        if (editingTransaction) {
+          // Update existing
+          const { error } = await supabase
+            .from('scheduled_transactions')
+            .update({
+              title: formData.title,
+              amount: parseFloat(formData.amount),
+              type: formData.type,
+              category: formData.category,
+              date: formData.date,
+              is_recurring: formData.isRecurring,
+              recurring_type: formData.recurringType,
+              description: formData.description || null,
+            })
+            .eq('id', editingTransaction.id);
 
-    if (editingTransaction) {
-      setScheduledTransactions(prev =>
-        prev.map(t => t.id === editingTransaction.id ? transaction : t)
-      );
+          if (error) {
+            console.error('Update error:', error);
+            alert('บันทึกไม่สำเร็จ: ' + error.message);
+          } else {
+            await loadTransactions();
+          }
+        } else {
+          // Create new
+          const { error } = await supabase
+            .from('scheduled_transactions')
+            .insert([{
+              title: formData.title,
+              amount: parseFloat(formData.amount),
+              type: formData.type,
+              category: formData.category,
+              date: formData.date,
+              is_recurring: formData.isRecurring,
+              recurring_type: formData.recurringType,
+              description: formData.description || null,
+            }]);
+
+          if (error) {
+            console.error('Insert error:', error);
+            alert('บันทึกไม่สำเร็จ: ' + error.message);
+          } else {
+            await loadTransactions();
+          }
+        }
+      } catch (err) {
+        console.error('Submit error:', err);
+      }
     } else {
-      setScheduledTransactions(prev => [...prev, transaction]);
+      // Fallback to localStorage
+      const transaction: ScheduledTransaction = {
+        id: editingTransaction?.id || Date.now().toString(),
+        title: formData.title,
+        amount: parseFloat(formData.amount),
+        type: formData.type,
+        category: formData.category,
+        date: formData.date,
+        isRecurring: formData.isRecurring,
+        recurringType: formData.recurringType,
+        description: formData.description,
+        createdAt: editingTransaction?.createdAt || new Date().toISOString(),
+      };
+
+      if (editingTransaction) {
+        setScheduledTransactions(prev =>
+          prev.map(t => t.id === editingTransaction.id ? transaction : t)
+        );
+      } else {
+        setScheduledTransactions(prev => [...prev, transaction]);
+      }
+      
+      // Save to localStorage
+      const updated = editingTransaction
+        ? scheduledTransactions.map(t => t.id === editingTransaction.id ? transaction : t)
+        : [...scheduledTransactions, transaction];
+      localStorage.setItem('quarion_scheduled_transactions', JSON.stringify(updated));
     }
 
+    setIsSaving(false);
     setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('ต้องการลบรายการนี้?')) {
-      setScheduledTransactions(prev => prev.filter(t => t.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm('ต้องการลบรายการนี้?')) return;
+    
+    if (isSupabaseConfigured() && supabase) {
+      const { error } = await supabase
+        .from('scheduled_transactions')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Delete error:', error);
+        alert('ลบไม่สำเร็จ: ' + error.message);
+      } else {
+        await loadTransactions();
+      }
+    } else {
+      // Fallback to localStorage
+      const updated = scheduledTransactions.filter(t => t.id !== id);
+      setScheduledTransactions(updated);
+      localStorage.setItem('quarion_scheduled_transactions', JSON.stringify(updated));
     }
   };
 
@@ -651,15 +818,18 @@ export default function CalendarPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors"
+                  disabled={isSaving}
+                  className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl shadow-lg hover:shadow-purple-500/40 transition-all"
+                  disabled={isSaving}
+                  className="flex-1 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl shadow-lg hover:shadow-purple-500/40 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {editingTransaction ? 'บันทึก' : 'เพิ่มรายการ'}
+                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isSaving ? 'กำลังบันทึก...' : (editingTransaction ? 'บันทึก' : 'เพิ่มรายการ')}
                 </button>
               </div>
             </form>
