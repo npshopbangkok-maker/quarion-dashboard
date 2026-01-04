@@ -69,12 +69,29 @@ export default function AICFOAdvisor({ transactions, user }: AICFOAdvisorProps) 
 
   // Load ALL data from localStorage
   useEffect(() => {
-    // Current Balance
-    const balanceSaved = localStorage.getItem('quarion_current_balance');
+    // Initial Balance (for calculating current balance)
+    const balanceSaved = localStorage.getItem('quarion_initial_balance');
     if (balanceSaved) {
       try {
         const data = JSON.parse(balanceSaved);
-        setStoredData(prev => ({ ...prev, currentBalance: data.amount }));
+        // Calculate current balance based on transactions after set date
+        const setDate = new Date(data.setDate);
+        let incomeAfter = 0;
+        let expenseAfter = 0;
+        
+        transactions.forEach((t) => {
+          const txDate = new Date(t.created_at || t.date);
+          if (txDate > setDate) {
+            if (t.type === 'income') {
+              incomeAfter += t.amount;
+            } else {
+              expenseAfter += t.amount;
+            }
+          }
+        });
+        
+        const currentBalance = data.amount + incomeAfter - expenseAfter;
+        setStoredData(prev => ({ ...prev, currentBalance }));
       } catch (e) {}
     }
     
@@ -104,7 +121,7 @@ export default function AICFOAdvisor({ transactions, user }: AICFOAdvisorProps) 
         setStoredData(prev => ({ ...prev, scheduledTransactions: data }));
       } catch (e) {}
     }
-  }, []);
+  }, [transactions]);
 
   // Prepare financial summary with ALL data
   const financialSummary = useMemo(() => {

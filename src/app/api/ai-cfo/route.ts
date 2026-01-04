@@ -17,7 +17,8 @@ interface TransactionSummary {
 
 export async function POST(request: NextRequest) {
   try {
-    const { mode, data, question } = await request.json();
+    const body = await request.json();
+    const { mode, data, question } = body;
 
     const openaiApiKey = process.env.OPENAI_API_KEY;
     
@@ -25,6 +26,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'OPENAI_API_KEY not configured',
+      });
+    }
+
+    // Validate data
+    if (!data) {
+      return NextResponse.json({
+        success: false,
+        error: 'No data provided',
       });
     }
 
