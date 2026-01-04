@@ -19,7 +19,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Category, TransactionType } from '@/types/database';
-import { isSupabaseConfigured } from '@/lib/supabase';
+import { isSupabaseConfigured, uploadSlip } from '@/lib/supabase';
 import { createTransaction } from '@/lib/database';
 import { getCategories, saveTransactions, getTransactions, generateId } from '@/lib/storage';
 import { notifyIncomeAdded, notifyExpenseAdded } from '@/lib/notifications';
@@ -232,6 +232,14 @@ export default function UploadPage() {
     setUploadStatus('uploading');
 
     try {
+      // Upload slip to Supabase Storage first
+      let slipUrl: string | null = null;
+      const transactionId = generateId();
+      
+      if (isSupabaseConfigured() && filePreview) {
+        slipUrl = await uploadSlip(filePreview.file, transactionId);
+      }
+
       const transactionData = {
         type: formData.type,
         amount: parseFloat(formData.amount),
@@ -239,7 +247,7 @@ export default function UploadPage() {
         description: formData.description,
         date: formData.date,
         created_by: user?.id || '',
-        slip_url: null, // TODO: Upload to Supabase Storage
+        slip_url: slipUrl,
       };
 
       if (isSupabaseConfigured()) {
@@ -248,7 +256,7 @@ export default function UploadPage() {
         // Save to localStorage
         const existingTransactions = getTransactions();
         const newTransaction = {
-          id: generateId(),
+          id: transactionId,
           ...transactionData,
           created_at: new Date().toISOString(),
           user: user || undefined,

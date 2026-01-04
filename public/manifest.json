@@ -4,8 +4,8 @@
   "description": "ระบบจัดการรายรับรายจ่าย",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#1e1e2d",
-  "theme_color": "#8b5cf6",
+  "background_color": "#0d1526",
+  "theme_color": "#c9a962",
   "orientation": "portrait-primary",
   "icons": [
     {
