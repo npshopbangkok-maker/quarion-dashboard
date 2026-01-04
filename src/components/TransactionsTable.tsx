@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Transaction } from '@/types/database';
 
@@ -36,6 +36,11 @@ export default function TransactionsTable({
 }: TransactionsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [previewSlip, setPreviewSlip] = useState<string | null>(null);
+
+  // Reset page when transactions change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [transactions.length]);
 
   // Pagination
   const totalPages = Math.ceil(transactions.length / itemsPerPage);

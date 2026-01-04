@@ -60,31 +60,39 @@ export default function CurrentBalanceCard({ user }: CurrentBalanceCardProps) {
 
   // Load initial balance and transactions
   useEffect(() => {
+    let isMounted = true;
+    
     // Load initial balance from localStorage
     const saved = localStorage.getItem(INITIAL_BALANCE_KEY);
     if (saved) {
       try {
         setInitialBalance(JSON.parse(saved));
       } catch (e) {
-        console.error('Failed to parse initial balance data');
+        console.error('Failed to parse initial balance data:', e);
       }
     }
 
-    // Load transactions
-    loadTransactions();
+    // Load transactions with mount check
+    const safeLoadTransactions = async () => {
+      if (!isMounted) return;
+      await loadTransactions();
+    };
+    
+    safeLoadTransactions();
 
     // Listen for custom event when transactions are updated
     const handleTransactionsUpdated = () => {
-      loadTransactions();
+      if (isMounted) loadTransactions();
     };
     window.addEventListener('transactions-updated', handleTransactionsUpdated);
 
     // Poll every 3 seconds for updates
     const pollInterval = setInterval(() => {
-      loadTransactions();
+      if (isMounted) loadTransactions();
     }, 3000);
 
     return () => {
+      isMounted = false;
       window.removeEventListener('transactions-updated', handleTransactionsUpdated);
       clearInterval(pollInterval);
     };

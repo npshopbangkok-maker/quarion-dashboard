@@ -86,6 +86,11 @@ export default function UploadPage() {
       return;
     }
 
+    // Revoke previous preview URL to prevent memory leak
+    if (filePreview?.preview) {
+      URL.revokeObjectURL(filePreview.preview);
+    }
+
     const preview = isImage ? URL.createObjectURL(file) : '';
     setFilePreview({
       file,
@@ -157,7 +162,7 @@ export default function UploadPage() {
     } else {
       setUploadStatus('scanned');
     }
-  }, []);
+  }, [filePreview?.preview]);
 
   // Skip OCR scanning
   const skipOcr = useCallback(() => {

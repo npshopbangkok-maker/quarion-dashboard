@@ -79,11 +79,16 @@ export default function DashboardPage() {
 
   // Start payment reminders
   useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    
     // Request permission first, then start reminders
     requestNotificationPermission().then(() => {
-      const cleanup = startPaymentReminders();
-      return cleanup;
+      cleanup = startPaymentReminders();
     });
+    
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   const handleLogout = () => {
