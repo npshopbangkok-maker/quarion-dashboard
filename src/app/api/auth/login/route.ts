@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = authenticate(username, password);
+    const user = await authenticate(username, password);
 
     if (user) {
       return NextResponse.json({

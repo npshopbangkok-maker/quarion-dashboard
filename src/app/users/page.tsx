@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
@@ -44,10 +44,22 @@ const roleConfig = {
 export default function UsersPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [users, setUsers] = useState(getAllUsers());
+  const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<{ id: string; name: string; email: string; role: UserRole } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch users on mount
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      const fetchedUsers = await getAllUsers();
+      setUsers(fetchedUsers);
+      setIsLoading(false);
+    };
+    fetchUsers();
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState({

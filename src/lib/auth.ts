@@ -1,5 +1,5 @@
-// Simple Internal Auth System
-// กำหนด users และ passwords ได้เอง
+// Auth System - supports both Supabase and Local fallback
+import { supabase, isSupabaseConfigured } from './supabase';
 
 export type UserRole = 'owner' | 'admin' | 'viewer';
 
@@ -11,68 +11,36 @@ export interface User {
 }
 
 // ========================================
-// กำหนด Users ที่นี่! แก้ไขได้ตามต้องการ
+// Local Users Fallback (ใช้เมื่อไม่มี Supabase)
 // ========================================
-const USERS: { [username: string]: { password: string; user: User } } = {
-  // Owner - เข้าถึงได้ทุกอย่าง, จัดการผู้ใช้, export reports
+const LOCAL_USERS: { [username: string]: { password: string; user: User } } = {
   'owner': {
     password: 'quarion2024',
-    user: {
-      id: '1',
-      name: 'Owner',
-      email: 'owner@quarion.com',
-      role: 'owner'
-    }
+    user: { id: '1', name: 'Owner', email: 'owner@quarion.com', role: 'owner' }
   },
-  // Owner - skillfi99
   'skillfi99': {
     password: 'skillfi99',
-    user: {
-      id: '6',
-      name: 'Skillfi99',
-      email: 'skillfi99@quarion.com',
-      role: 'owner'
-    }
+    user: { id: '6', name: 'Skillfi99', email: 'skillfi99@quarion.com', role: 'owner' }
   },
-  // Admin - เพิ่ม/แก้ไข transactions, upload slips
   'admin': {
     password: 'admin2024',
-    user: {
-      id: '2',
-      name: 'Admin',
-      email: 'admin@quarion.com',
-      role: 'admin'
-    }
+    user: { id: '2', name: 'Admin', email: 'admin@quarion.com', role: 'admin' }
   },
-  // Viewer - ดู dashboard อย่างเดียว
   'viewer': {
     password: 'viewer2024',
-    user: {
-      id: '3',
-      name: 'Viewer',
-      email: 'viewer@quarion.com',
-      role: 'viewer'
-    }
+    user: { id: '3', name: 'Viewer', email: 'viewer@quarion.com', role: 'viewer' }
   },
-  // Admin01
   'admin01': {
     password: 'admin01',
-    user: {
-      id: '4',
-      name: 'Pukan',
-      email: 'admin01@quarion.com',
-      role: 'admin'
-    }
+    user: { id: '4', name: 'Pukan', email: 'admin01@quarion.com', role: 'admin' }
   },
-  // Admin02
   'admin02': {
     password: 'admin02',
-    user: {
-      id: '5',
-      name: 'Gift',
-      email: 'admin02@quarion.com',
-      role: 'admin'
-    }
+    user: { id: '5', name: 'Gift', email: 'admin02@quarion.com', role: 'admin' }
+  },
+  'convertcake': {
+    password: 'convertcake',
+    user: { id: '7', name: 'Convertcake', email: 'convertcake@quarion.com', role: 'viewer' }
   }
 };
 
@@ -80,16 +48,87 @@ const USERS: { [username: string]: { password: string; user: User } } = {
 // Auth Functions
 // ========================================
 
-export function authenticate(username: string, password: string): User | null {
-  const userEntry = USERS[username.toLowerCase()];
+// Authenticate from Supabase
+async function authenticateFromSupabase(username: string, password: string): Promise<User | null> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, username, password, name, email, role')
+      .eq('username', username.toLowerCase())
+      .eq('password', password)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      role: data.role as UserRole
+    };
+  } catch (error) {
+    console.error('Supabase auth error:', error);
+    return null;
+  }
+}
+
+// Authenticate from Local
+function authenticateFromLocal(username: string, password: string): User | null {
+  const userEntry = LOCAL_USERS[username.toLowerCase()];
   if (userEntry && userEntry.password === password) {
     return userEntry.user;
   }
   return null;
 }
 
-export function getAllUsers(): User[] {
-  return Object.values(USERS).map(entry => entry.user);
+// Main authenticate function - tries Supabase first, then Local
+export async function authenticate(username: string, password: string): Promise<User | null> {
+  // Try Supabase first
+  const supabaseUser = await authenticateFromSupabase(username, password);
+  if (supabaseUser) {
+    return supabaseUser;
+  }
+  
+  // Fallback to local
+  return authenticateFromLocal(username, password);
+}
+
+// Sync version for backward compatibility
+export function authenticateSync(username: string, password: string): User | null {
+  return authenticateFromLocal(username, password);
+}
+
+// Get all users from Supabase
+export async function getAllUsers(): Promise<User[]> {
+  if (!isSupabaseConfigured() || !supabase) {
+    return Object.values(LOCAL_USERS).map(entry => entry.user);
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email, role')
+      .order('created_at', { ascending: true });
+
+    if (error || !data) {
+      return Object.values(LOCAL_USERS).map(entry => entry.user);
+    }
+
+    return data.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role as UserRole
+    }));
+  } catch {
+    return Object.values(LOCAL_USERS).map(entry => entry.user);
+  }
 }
 
 // ========================================
@@ -97,7 +136,6 @@ export function getAllUsers(): User[] {
 // ========================================
 
 export const PERMISSIONS = {
-  // หน้าที่แต่ละ role เข้าได้
   pages: {
     dashboard: ['owner', 'admin', 'viewer'] as UserRole[],
     transactions: ['owner', 'admin', 'viewer'] as UserRole[],
@@ -108,7 +146,6 @@ export const PERMISSIONS = {
     settings: ['owner'] as UserRole[],
     users: ['owner'] as UserRole[]
   },
-  // actions ที่แต่ละ role ทำได้
   actions: {
     viewDashboard: ['owner', 'admin', 'viewer'] as UserRole[],
     viewTransactions: ['owner', 'admin', 'viewer'] as UserRole[],

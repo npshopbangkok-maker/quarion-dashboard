@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Transaction, User } from '@/types/database';
-import { isOwner, getAllUsers } from '@/lib/auth';
+import { isOwner, getAllUsers, User as AuthUser } from '@/lib/auth';
 import { 
   Users, 
   ArrowUpCircle, 
@@ -25,9 +25,17 @@ interface ActivityItem {
 }
 
 export default function RecentAdminActivity({ transactions, user }: RecentAdminActivityProps) {
+  const [allUsers, setAllUsers] = useState<AuthUser[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const users = await getAllUsers();
+      setAllUsers(users);
+    };
+    fetchUsers();
+  }, []);
+
   const { recentActivities, stats } = useMemo(() => {
-    // Get all users for lookup
-    const allUsers = getAllUsers();
     
     // Get activities from the last 7 days
     const sevenDaysAgo = new Date();
@@ -93,7 +101,7 @@ export default function RecentAdminActivity({ transactions, user }: RecentAdminA
       recentActivities: activities.slice(0, 10), // Last 10 activities
       stats: statsData 
     };
-  }, [transactions]);
+  }, [transactions, allUsers]);
 
   // Owner guard
   if (!isOwner(user)) return null;
