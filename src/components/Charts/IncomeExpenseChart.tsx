@@ -72,7 +72,7 @@ export default function IncomeExpenseChart({ data, isLoading = false }: IncomeEx
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={data}
-              margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+              margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 

@@ -187,7 +187,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
             {/* Tabs Navigation - Horizontal scroll on mobile */}
             <div className="card lg:col-span-1 order-1">
-              <nav className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 -mx-2 px-2 lg:mx-0 lg:px-0 lg:space-y-1">
+              <nav className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 lg:space-y-1">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (

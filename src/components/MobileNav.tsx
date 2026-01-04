@@ -128,6 +128,7 @@ export default function MobileNav({ user, onLogout }: MobileNavProps) {
         className={`
           lg:hidden fixed top-0 left-0 h-full w-72 bg-[#1e1e2d] text-white z-50
           transform transition-transform duration-300 ease-in-out
+          pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
