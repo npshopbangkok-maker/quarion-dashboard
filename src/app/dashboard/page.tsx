@@ -116,7 +116,7 @@ export default function DashboardPage() {
         />
 
         {/* Dashboard Content */}
-        <div className="p-3 lg:p-6 space-y-3 lg:space-y-6">
+        <div className="p-4 lg:p-6 space-y-4 lg:space-y-6 safe-container safe-bottom max-w-full">
           {/* Page Title */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
@@ -133,19 +133,21 @@ export default function DashboardPage() {
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
-            <div className="xl:col-span-2">
+            <div className="xl:col-span-2 min-w-0">
               <IncomeExpenseChart data={monthlyData} isLoading={isLoading} />
             </div>
-            <div>
+            <div className="min-w-0">
               <CategoryDonutChart data={categoryData} isLoading={isLoading} />
             </div>
           </div>
 
           {/* Transactions Table */}
-          <TransactionsTable 
-            transactions={filteredTransactions} 
-            isLoading={isLoading} 
-          />
+          <div className="min-w-0">
+            <TransactionsTable 
+              transactions={filteredTransactions} 
+              isLoading={isLoading} 
+            />
+          </div>
         </div>
         
         {/* Push Notification Prompt */}

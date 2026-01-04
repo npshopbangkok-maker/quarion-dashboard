@@ -78,14 +78,14 @@ export default function AnalyticsPage() {
 
   return (
     <ProtectedPage requiredPage="analytics">
-      <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="min-h-screen bg-gray-50 overflow-x-hidden w-full">
         <Sidebar user={user} onLogout={handleLogout} />
         <MobileNav user={user} onLogout={handleLogout} />
 
         <main className="lg:ml-64 min-h-screen transition-all duration-300 mobile-content-pt overflow-x-hidden">
           <TopBar user={user} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
-          <div className="p-3 lg:p-6 space-y-3 lg:space-y-6 max-w-full">
+          <div className="p-4 lg:p-6 space-y-4 lg:space-y-6 safe-container safe-bottom max-w-full">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -106,32 +106,32 @@ export default function AnalyticsPage() {
             ) : (
               <>
                 {/* Row 1: Current Balance + Quick Snapshot + Progress Tracker + Saving Goal */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
-                  <CurrentBalanceCard user={user} />
-                  <QuickSnapshot transactions={transactions} user={user} />
-                  <MonthlyProgressTracker transactions={transactions} user={user} />
-                  <SavingGoalCard transactions={transactions} user={user} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+                  <div className="min-w-0"><CurrentBalanceCard user={user} /></div>
+                  <div className="min-w-0"><QuickSnapshot transactions={transactions} user={user} /></div>
+                  <div className="min-w-0"><MonthlyProgressTracker transactions={transactions} user={user} /></div>
+                  <div className="min-w-0"><SavingGoalCard transactions={transactions} user={user} /></div>
                 </div>
 
                 {/* Row 2: Flow Signal + Monthly Insight */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
-                  <FlowSignalHeatmap transactions={transactions} user={user} />
-                  <MonthlyInsightChart transactions={transactions} user={user} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                  <div className="min-w-0"><FlowSignalHeatmap transactions={transactions} user={user} /></div>
+                  <div className="min-w-0"><MonthlyInsightChart transactions={transactions} user={user} /></div>
                 </div>
 
                 {/* Row 3: Daily Flow Direction */}
-                <DailyFlowDirection transactions={transactions} user={user} />
+                <div className="min-w-0"><DailyFlowDirection transactions={transactions} user={user} /></div>
 
                 {/* Row 4: Monthly Report */}
-                <MonthlyReport transactions={transactions} user={user} />
+                <div className="min-w-0"><MonthlyReport transactions={transactions} user={user} /></div>
 
                 {/* Row 5: AI CFO Advisor */}
-                <AICFOAdvisor transactions={transactions} user={user} />
+                <div className="min-w-0"><AICFOAdvisor transactions={transactions} user={user} /></div>
 
                 {/* Row 6: Admin Activity + Yearly Overview */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
-                  <RecentAdminActivity transactions={transactions} user={user} />
-                  <YearlyOverviewDashboard transactions={transactions} user={user} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                  <div className="min-w-0"><RecentAdminActivity transactions={transactions} user={user} /></div>
+                  <div className="min-w-0"><YearlyOverviewDashboard transactions={transactions} user={user} /></div>
                 </div>
               </>
             )}
